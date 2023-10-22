@@ -20,7 +20,7 @@ export class AppController {
 
   @Delete('testing/all-data')
   async deleteAll() {
-    await this.UserService.getAllUsers()
+    await this.UserService.deleteAllUsers()
     await this.PostService.deleteAllPosts()
     await this.BlogService.deleteAllBlogs()
     return
