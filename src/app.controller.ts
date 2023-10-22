@@ -18,7 +18,7 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Delete('testing/all-data')
+  @Delete('/testing/all-data')
   async deleteAll() {
     await this.UserService.deleteAllUsers()
     await this.PostService.deleteAllPosts()
