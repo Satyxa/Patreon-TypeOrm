@@ -63,7 +63,7 @@ export const blogsPS = async(BlogModel, payload) => {
 
 export const postsPS = async(PostModel, payload, filter = {}): Promise<any> => {
     const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
-    const totalCount: number = await PostModel.countDocuments({})
+    const totalCount: number = await PostModel.countDocuments(filter)
     const pagesCount = Math.ceil(totalCount / pageSize)
 
     const posts = await PostModel
