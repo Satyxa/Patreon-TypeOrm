@@ -20,7 +20,7 @@ export const usersPS = async(UserModel, payload) => {
     const {pageNumber, pageSize, sortBy, searchLoginTerm,
         searchEmailTerm, sortDirection} = getValuesPS(payload)
 
-    const filter: FilterQuery<userT> = {$and: [
+    const filter: FilterQuery<userT> = {$or: [
             {'AccountData.username': {$regex: searchLoginTerm ?? '', $options: 'i'}},
             {'AccountData.email': {$regex: searchEmailTerm ?? '', $options: 'i'}}
         ]}
