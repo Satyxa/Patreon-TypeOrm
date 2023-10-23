@@ -18,6 +18,7 @@ export class UserService {
     async getAllUsers(payload) {
 
         const {users, pagesCount, pageNumber, pageSize, totalCount} = await usersPS(this.UserModel, payload)
+
         const viewUsers = users.map(user => {
             return {
                 id: user.id,

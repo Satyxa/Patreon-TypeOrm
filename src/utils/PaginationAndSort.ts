@@ -36,9 +36,10 @@ export const usersPS = async(UserModel, payload) => {
         recoveryCode: 0,
         __v: 0,
         sessions: 0 }
+
     const users = await UserModel
         .find(filter, projection)
-        .sort({[sortBy]: sortDirection})
+        .sort({[`AccountData.${sortBy}`]: sortDirection})
         .skip(pageSize * pageNumber - pageSize)
         .limit(pageSize)
         .lean()
