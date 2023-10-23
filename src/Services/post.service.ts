@@ -4,7 +4,7 @@ import {Post, PostDocument} from "../Mongoose/PostSchema";
 import {Model} from "mongoose";
 import {postsPS} from "../utils/PaginationAndSort";
 import {EntityUtils} from "../utils/EntityUtils";
-import {Injectable} from "@nestjs/common";
+import {HttpException, Injectable} from "@nestjs/common";
 import {blogsT, postT} from "../types";
 import {Blog, BlogDocument} from "../Mongoose/BlogSchema";
 
@@ -32,7 +32,7 @@ export class PostService {
     async getOnePost(id): Promise<PostDocument | null> {
         let userId = ''
         const post = await this.PostModel.findOne({id}, { projection : { _id:0, comments: 0}}).lean()
-        if(!post) return null
+        if(!post) throw new HttpException('Not Found', 404)
         return EntityUtils.GetPost(post, userId)
     }
     async createPost(payload) {
@@ -50,13 +50,16 @@ export class PostService {
         return post
     }
     async deletePost(id) {
-        await this.PostModel.findOneAndDelete({id})
+        const post = await this.PostModel.findOne({id})
+        if(!post) throw new HttpException('Not Found', 404)
+        await this.PostModel.deleteOne({id})
     }
     async updatePost(id, payload){
         const {title, shortDescription, content, blogId} = payload
+        const post = await this.PostModel.findOne({id})
         const blog: blogsT | null = await this.BlogModel.findOne({id: blogId})
-        if (!blog) return
-        await this.PostModel.findOneAndUpdate({id},
+        if (!blog || !post) throw new HttpException('Not Found', 404)
+        await this.PostModel.updateOne({id},
             {
                 $set: {
                     title,

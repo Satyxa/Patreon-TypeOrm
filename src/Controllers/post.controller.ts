@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, Param, Post, Put, Query} from '@nestjs/common';
+import {Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query} from '@nestjs/common';
 import {PostService} from "../Services/post.service";
 
 type queryPayload = {
@@ -32,10 +32,12 @@ export class PostController {
         return await this.PostService.createPost(createdPostPayload)
     }
     @Delete(':id')
+    @HttpCode(204)
     async deletePost(@Param('id') id: string){
         return await this.PostService.deletePost(id)
     }
     @Put(':id')
+    @HttpCode(204)
     async updatePost(@Param('id') id: string, @Body() updatePostPayload: createdPostPayloadType){
         return await this.PostService.updatePost(id, updatePostPayload)
     }

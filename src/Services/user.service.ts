@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import {HttpException, Injectable} from '@nestjs/common';
 import {UserAccountDBType, userT, userViewT} from "../types";
 import * as uuid from 'uuid'
 import add from 'date-fns/add'
@@ -23,7 +23,9 @@ export class UserService {
             pagesCount, page: pageNumber, pageSize,
             totalCount, items: users})
     }
-    getOneUser(id): Promise<User | null> {
+    async getOneUser(id): Promise<User | null> {
+        const user = await this.UserModel.findOne({id})
+        if(!user) throw new HttpException('Not Found', 404)
         const projection = {
             _id:0,
             'AccountData._id': 0,
@@ -50,6 +52,8 @@ export class UserService {
         return ViewUser
     }
     async deleteUser(id){
+        const user = await this.UserModel.findOne({id})
+        if(!user) throw new HttpException('Not Found', 404)
         await this.UserModel.findOneAndDelete({id})
     }
 }

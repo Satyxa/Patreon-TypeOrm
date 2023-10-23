@@ -1,4 +1,4 @@
-import {Injectable} from "@nestjs/common";
+import {HttpCode, HttpException, Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Blog, BlogDocument} from "../Mongoose/BlogSchema";
 import {FilterQuery, Model} from "mongoose";
@@ -21,7 +21,9 @@ export class BlogService {
         return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: blogs})
     }
     async getOneBlog(id): Promise<Blog | null> {
-        return this.BlogModel.findOne({id}, {_id: 0, __v: 0})
+        const blog = await this.BlogModel.findOne({id}, {_id: 0, __v: 0})
+        if(!blog) throw new HttpException('Not Found', 404)
+        return blog
     }
 
     async createBlog(name, description, websiteUrl): Promise<blogsT> {
@@ -42,13 +44,16 @@ export class BlogService {
         return blog
     }
     async deleteBlog(id){
-       await this.BlogModel.findOneAndDelete({id})
+        const blog = await this.BlogModel.findOne({id})
+        if(!blog) throw new HttpException('Not Found', 404)
+       await this.BlogModel.deleteOne({id})
     }
 
     async updateBlog(id, updateBlogPayload) {
         const {name, description, websiteUrl} = updateBlogPayload
-
-        await this.BlogModel.findOneAndUpdate({id}, {$set: {
+        const blog = await this.BlogModel.findOne({id})
+        if(!blog) throw new HttpException('Not Found', 404)
+        await this.BlogModel.updateOne({id}, {$set: {
                 name, description, websiteUrl
             }})
     }
