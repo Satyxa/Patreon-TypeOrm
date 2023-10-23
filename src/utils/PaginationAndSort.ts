@@ -17,13 +17,17 @@ export const getValuesPS = (payload) => {
 
 export const usersPS = async(UserModel, payload) => {
 
-    const {pageNumber, pageSize, sortBy, searchLoginTerm,
+    let {pageNumber, pageSize, sortBy, searchLoginTerm,
         searchEmailTerm, sortDirection} = getValuesPS(payload)
-
+    if(sortBy && sortBy === 'login') {
+        sortBy = 'username'
+    }
     const filter: FilterQuery<userT> = {$or: [
             {'AccountData.username': {$regex: searchLoginTerm ?? '', $options: 'i'}},
             {'AccountData.email': {$regex: searchEmailTerm ?? '', $options: 'i'}}
         ]}
+    console.log(sortBy)
+    console.log(sortDirection)
 
     const totalCount = await UserModel.countDocuments(filter)
     const pagesCount = Math.ceil(totalCount / pageSize)
