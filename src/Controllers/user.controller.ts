@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, Param, Post, Query} from '@nestjs/common';
+import {Body, Controller, Delete, Get, HttpCode, Param, Post, Query} from '@nestjs/common';
 import { UserService } from '../Services/user.service';
 import {createUserPayloadType, UserAccountDBType, userViewT} from "../types";
 import {User} from "../Mongoose/UserSchema";
@@ -31,6 +31,7 @@ export class UserController {
         return await this.UserService.createUser(login, email, password)
     }
     @Delete(':id')
+    @HttpCode(204)
     async deleteUser(@Param('id') id: string){
         return await this.UserService.deleteUser(id)
     }

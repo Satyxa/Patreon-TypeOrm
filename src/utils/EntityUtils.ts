@@ -21,8 +21,14 @@ export const EntityUtils = {
             sessions: [],
             recoveryCode: ''
         }
+        const ViewUser = {
+            id: UserDB.id,
+            email: UserDB.AccountData.email,
+            login: UserDB.AccountData.username,
+            createdAt: UserDB.AccountData.createdAt
+        }
 
-        const {sessions, recoveryCode, ...ViewUser} = UserDB
+        // const {sessions, recoveryCode, ...ViewUser} = UserDB
 
         return {UserDB, ViewUser}
     },

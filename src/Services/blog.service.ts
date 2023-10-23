@@ -61,7 +61,8 @@ export class BlogService {
     async getPostsForBlog(id, payload) {
         let userId = ''
         const filter = {blogId: id}
-
+        const blog = await this.BlogModel.findOne({id})
+        if(!blog) throw new HttpException('Not Found', 404)
         let {posts, pageNumber, pageSize} = await postsPS(this.PostModel, payload, filter)
         const totalCount = posts.length
         const pagesCount = Math.ceil(totalCount / pageSize)

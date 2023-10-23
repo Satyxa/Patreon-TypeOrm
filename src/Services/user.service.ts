@@ -18,10 +18,17 @@ export class UserService {
     async getAllUsers(payload) {
 
         const {users, pagesCount, pageNumber, pageSize, totalCount} = await usersPS(this.UserModel, payload)
-
+        const viewUsers = users.map(user => {
+            return {
+                id: user.id,
+                email: user.AccountData.email,
+                login: user.AccountData.username,
+                createdAt: user.AccountData.createdAt
+            }
+        })
         return ({
             pagesCount, page: pageNumber, pageSize,
-            totalCount, items: users})
+            totalCount, items: viewUsers})
     }
     async getOneUser(id): Promise<User | null> {
         const user = await this.UserModel.findOne({id})
