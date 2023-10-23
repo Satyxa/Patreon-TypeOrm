@@ -38,7 +38,7 @@ export class PostService {
     async createPost(payload) {
         const {title, shortDescription, content, blogId} = payload
         const blog: blogsT | null = await this.BlogModel.findOne({id: blogId})
-        if(!blog) return
+        if(!blog) throw new HttpException('Not Found', 404)
 
         const newPost: postT = EntityUtils.CreatePost(title, shortDescription, content, blogId, blog.name)
 
