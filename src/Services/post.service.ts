@@ -2,10 +2,10 @@
 import {InjectModel} from "@nestjs/mongoose";
 import {Post, PostDocument} from "../Mongoose/PostSchema";
 import {Model} from "mongoose";
-import {postsPS} from "../utils/PaginationAndSort";
-import {EntityUtils} from "../utils/EntityUtils";
+import {postsPS} from "../Utils/PaginationAndSort";
+import {EntityUtils} from "../Utils/EntityUtils";
 import {HttpException, Injectable} from "@nestjs/common";
-import {blogsT, postT} from "../types";
+import {blogsT, postT} from "../Types/types";
 import {Blog, BlogDocument} from "../Mongoose/BlogSchema";
 
 @Injectable()

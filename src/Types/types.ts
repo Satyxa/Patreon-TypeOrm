@@ -172,3 +172,8 @@ export type createUserPayloadType = {
     email: string
     password: string
 }
+
+export type ErrorsType = {
+    field: string
+    message: string
+}

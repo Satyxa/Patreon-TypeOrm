@@ -1,13 +1,13 @@
 import {HttpException, Injectable} from '@nestjs/common';
-import {UserAccountDBType, userT, userViewT} from "../types";
+import {UserAccountDBType, userT, userViewT} from "../Types/types";
 import * as uuid from 'uuid'
 import add from 'date-fns/add'
 import bcrypt from 'bcrypt'
 import {InjectModel} from "@nestjs/mongoose";
 import {User, UserDocument} from "../Mongoose/UserSchema";
 import {FilterQuery, Model} from "mongoose";
-import {usersPS} from "../utils/PaginationAndSort";
-import {EntityUtils} from "../utils/EntityUtils";
+import {usersPS} from "../Utils/PaginationAndSort";
+import {EntityUtils} from "../Utils/EntityUtils";
 @Injectable()
 export class UserService {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
@@ -45,14 +45,7 @@ export class UserService {
         return this.UserModel.findOne({id}, projection);
     }
     async createUser(login: string, email: string, password: string){
-        // const passwordSalt = await bcrypt.genSalt(10)
-        // const passwordHash = await bcrypt.hash(password, passwordSalt)
-        const passwordHash = password
-        const id = uuid.v4()
-        const confirmationCode = uuid.v4()
-        const createdAt = new Date().toISOString()
-        const expirationDate = new Date().toISOString()
-        const {UserDB, ViewUser} = EntityUtils.CreateUser(login, email, passwordHash, id, createdAt, expirationDate, confirmationCode)
+        const {UserDB, ViewUser} = await EntityUtils.CreateUser(login, email, password)
 
         const createdUser = new this.UserModel(UserDB)
         await createdUser.save()

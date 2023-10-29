@@ -1,5 +1,5 @@
 import {FilterQuery, SortOrder} from "mongoose";
-import {blogsT, commentsT, UserAccountDBType, userT} from "../types";
+import {blogsT, commentsT, UserAccountDBType, userT} from "../Types/types";
 
 export const getValuesPS = (payload) => {
     let {pageNumber, pageSize, sortBy, searchLoginTerm, searchEmailTerm, sortDirection, searchNameTerm} = payload
@@ -26,8 +26,6 @@ export const usersPS = async(UserModel, payload) => {
             {'AccountData.username': {$regex: searchLoginTerm ?? '', $options: 'i'}},
             {'AccountData.email': {$regex: searchEmailTerm ?? '', $options: 'i'}}
         ]}
-    console.log(sortBy)
-    console.log(sortDirection)
 
     const totalCount = await UserModel.countDocuments(filter)
     const pagesCount = Math.ceil(totalCount / pageSize)

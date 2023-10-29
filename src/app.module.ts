@@ -12,6 +12,10 @@ import {Post, PostSchema} from "./Mongoose/PostSchema";
 import {PostController} from "./Controllers/post.controller";
 import {PostService} from "./Services/post.service";
 import {ConfigModule} from '@nestjs/config'
+import {RegistrationController} from "./Controllers/registration.controller";
+import {RegistrationService} from "./Services/registration.service";
+import {LoginController} from "./Controllers/login.controller";
+import {LoginService} from "./Services/login.service";
 const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@clusterblog.jvi7su7.mongodb.net/patreon?retryWrites=true&w=majority'
 @Module({
   imports: [
@@ -30,7 +34,9 @@ const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@c
       schema: PostSchema
       }])
   ],
-  controllers: [AppController, UserController, BlogController, PostController],
-  providers: [AppService, UserService, BlogService, PostService],
+  controllers: [AppController, UserController, BlogController,
+    PostController, RegistrationController, LoginController],
+  providers: [AppService, UserService, BlogService, PostService,
+    RegistrationService, LoginService],
 })
 export class AppModule {}

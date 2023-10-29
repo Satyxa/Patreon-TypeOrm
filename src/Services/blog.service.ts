@@ -2,11 +2,11 @@ import {HttpCode, HttpException, Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Blog, BlogDocument} from "../Mongoose/BlogSchema";
 import {FilterQuery, Model} from "mongoose";
-import {blogsT, postT} from "../types";
-import {blogsPS, getValuesPS, postsPS} from "../utils/PaginationAndSort";
+import {blogsT, postT} from "../Types/types";
+import {blogsPS, getValuesPS, postsPS} from "../Utils/PaginationAndSort";
 import * as uuid from 'uuid'
 import {Post, PostDocument} from "../Mongoose/PostSchema";
-import {EntityUtils} from "../utils/EntityUtils";
+import {EntityUtils} from "../Utils/EntityUtils";
 @Injectable()
 export class BlogService {
     constructor(

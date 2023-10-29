@@ -1,16 +1,22 @@
 import * as uuid from "uuid";
-import {newestLikesT, reactionsT, UserAccountDBType, userViewT} from "../types";
+import {newestLikesT, reactionsT, UserAccountDBType, userViewT} from "../Types/types";
 import {User} from "../Mongoose/UserSchema";
+import bcrypt from "bcrypt";
 
 export const EntityUtils = {
-    CreateUser: (login, email, passwordHash, id, createdAt, expirationDate, confirmationCode) => {
-
+    CreateUser: async (login, email, password) => {
+        const id = uuid.v4()
+        const confirmationCode = uuid.v4()
+        const createdAt = new Date().toISOString()
+        const expirationDate = new Date().toISOString()
+        const salt = await bcrypt.genSalt(10)
+        const hash = await bcrypt.hash(password, salt)
         const UserDB: UserAccountDBType = {
             id,
             AccountData: {
                 username: login,
                 email,
-                passwordHash,
+                passwordHash: hash,
                 createdAt
             },
             EmailConfirmation: {
