@@ -11,6 +11,7 @@ export class EmailService {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>){
     }
     async confirmEmail(code) {
+        if(!code) throw new BadRequestException([{message: 'code is required', field: "code"}])
         const user: User | null = await this.UserModel.findOne({"EmailConfirmation.confirmationCode": code})
         if(!user) throw new BadRequestException([{message: 'invalid code', field: "code"}])
         if (user.EmailConfirmation.isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "code" }])
@@ -20,6 +21,7 @@ export class EmailService {
 
     }
     async confirmationCodeResending(email) {
+        if(!email) throw new BadRequestException([{message: 'email is required', field: "email"}])
         const user: User | null = await findUserByLoginOrEmail(email, this.UserModel)
         if(!user) throw new BadRequestException([{message: 'this email does not exist', field: "email"}])
         if(user.EmailConfirmation.isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "code" }])
