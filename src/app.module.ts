@@ -16,6 +16,8 @@ import {RegistrationController} from "./Controllers/registration.controller";
 import {RegistrationService} from "./Services/registration.service";
 import {LoginController} from "./Controllers/login.controller";
 import {LoginService} from "./Services/login.service";
+import {EmailService} from "./Services/email.service";
+import {EmailController} from "./Controllers/email.controller";
 const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@clusterblog.jvi7su7.mongodb.net/patreon?retryWrites=true&w=majority'
 @Module({
   imports: [
@@ -35,8 +37,8 @@ const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@c
       }])
   ],
   controllers: [AppController, UserController, BlogController,
-    PostController, RegistrationController, LoginController],
+    PostController, RegistrationController, LoginController, EmailController],
   providers: [AppService, UserService, BlogService, PostService,
-    RegistrationService, LoginService],
+    RegistrationService, LoginService, EmailService],
 })
 export class AppModule {}
