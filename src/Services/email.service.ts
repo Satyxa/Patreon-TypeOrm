@@ -23,28 +23,17 @@ export class EmailService {
     }
     async confirmationCodeResending(payload) {
         const {email} = payload
-        console.log(1)
         if(!email) throw new BadRequestException([{message: 'email is required', field: "email"}])
-        console.log(2, email)
         const user: User | null = await findUserByLoginOrEmail(email, this.UserModel)
-        console.log(3, user)
         if(!user) throw new BadRequestException([{message: 'this email does not exist', field: "email"}])
-        if(user.EmailConfirmation.isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "code" }])
-        console.log(4)
+        if(user.EmailConfirmation.isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "email" }])
         const newCode = uuid.v4()
-        console.log(5)
-        console.log(user.EmailConfirmation.confirmationCode)
         user.EmailConfirmation.confirmationCode = newCode
-        console.log(user.EmailConfirmation.confirmationCode)
-        console.log(6)
-        console.log(user)
         await this.UserModel.updateOne({'AccountData.email': email}, {$set: {...user}})
-        console.log(7)
         const message = `<h1>Thank for your registration</h1>
     <p>To finish registration please follow the link below:
         <a href=https://somesite.com/confirm-email?code=${newCode}>complete registration</a>
     </p>`
-        console.log(8)
         await emailAdapter.sendEmail(email, 'email confirmation', message)
     }
 }
