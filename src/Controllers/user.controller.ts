@@ -32,7 +32,6 @@ export class UserController {
         const {login, email, password} = createUserPayload
         return await this.UserService.createUser(login, email, password)
     }
-    @UseGuards(AuthGuard)
     @Delete(':id')
     @HttpCode(204)
     async deleteUser(@Param('id') id: string){
