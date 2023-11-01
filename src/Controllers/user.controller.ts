@@ -27,7 +27,6 @@ export class UserController {
     async getOneUser(@Param('id') id: string): Promise<User | null> {
         return await this.UserService.getOneUser(id)
     }
-    @UseGuards(AuthGuard)
     @Post()
     async createUser(@Body() createUserPayload: createUserPayloadClass) {
         const {login, email, password} = createUserPayload
