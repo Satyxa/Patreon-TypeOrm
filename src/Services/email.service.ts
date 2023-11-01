@@ -10,7 +10,8 @@ import * as uuid from 'uuid'
 export class EmailService {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>){
     }
-    async confirmEmail(code) {
+    async confirmEmail(payload) {
+        const {code} = payload
         if(!code) throw new BadRequestException([{message: 'code is required', field: "code"}])
         const user: User | null = await this.UserModel.findOne({"EmailConfirmation.confirmationCode": code})
         if(!user) throw new BadRequestException([{message: 'invalid code', field: "code"}])
@@ -20,7 +21,8 @@ export class EmailService {
             $set: {"EmailConfirmation.isConfirmed": true}})
 
     }
-    async confirmationCodeResending(email) {
+    async confirmationCodeResending(payload) {
+        const {email} = payload
         if(!email) throw new BadRequestException([{message: 'email is required', field: "email"}])
         const user: User | null = await findUserByLoginOrEmail(email, this.UserModel)
         if(!user) throw new BadRequestException([{message: 'this email does not exist', field: "email"}])
