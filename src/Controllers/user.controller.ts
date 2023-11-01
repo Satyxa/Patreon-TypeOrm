@@ -3,7 +3,7 @@ import { UserService } from '../Services/user.service';
 import {createUserPayloadType, UserAccountDBType, userViewT} from "../Types/types";
 import {User} from "../Mongoose/UserSchema";
 import {createUserPayloadClass} from "../Types/classesTypes";
-import {AuthGuard} from "../Middleware/AuthGuard";
+import {AuthGuard, BasicAuthGuard} from "../Middleware/AuthGuard";
 
 export type queryPayload = {
     pageNumber: number,
@@ -27,11 +27,13 @@ export class UserController {
     async getOneUser(@Param('id') id: string): Promise<User | null> {
         return await this.UserService.getOneUser(id)
     }
+    @UseGuards(BasicAuthGuard)
     @Post()
     async createUser(@Body() createUserPayload: createUserPayloadClass) {
         const {login, email, password} = createUserPayload
         return await this.UserService.createUser(login, email, password)
     }
+    @UseGuards(BasicAuthGuard)
     @Delete(':id')
     @HttpCode(204)
     async deleteUser(@Param('id') id: string){

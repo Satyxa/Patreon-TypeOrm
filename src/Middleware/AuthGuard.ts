@@ -30,3 +30,25 @@ export class AuthGuard implements CanActivate {
     }
 
 }
+
+@Injectable()
+export class BasicAuthGuard implements CanActivate {
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const req = context.switchToHttp().getRequest()
+
+        const headersData = req.headers.authorization
+        if (headersData) {
+
+            if(headersData === 'Basic admin:qwerty') throw new UnauthorizedException()
+
+            const data = atob((headersData).replace('Basic ', ''))
+            const login = data.split(':')[0]
+            const password = data.split(':')[1]
+
+            if (login === 'admin' && password === 'qwerty') return true
+            else throw new UnauthorizedException()
+
+        } else throw new UnauthorizedException()
+    }
+}
