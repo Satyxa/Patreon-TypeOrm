@@ -1,4 +1,4 @@
-import {IsEmail, isString, Length} from "class-validator";
+import {IsEmail, IsNotEmpty, isString, Length} from "class-validator";
 
 export class createUserPayloadClass {
     @Length(3, 10)
@@ -9,7 +9,14 @@ export class createUserPayloadClass {
     password: string
 }
 
-export class confirmationCode {
-    @isString({code: String})
+export class confirmationCodeClass {
+    @IsNotEmpty()
+    required : true
     code: string
+}
+
+export class emailClass {
+    @IsNotEmpty()
+    required : true
+    email: string
 }
