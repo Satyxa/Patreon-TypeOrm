@@ -11,12 +11,10 @@ export class createUserPayloadClass {
 
 export class confirmationCodeClass {
     @IsNotEmpty()
-    required : true
     code: string
 }
 
 export class emailClass {
     @IsNotEmpty()
-    required : true
     email: string
 }
