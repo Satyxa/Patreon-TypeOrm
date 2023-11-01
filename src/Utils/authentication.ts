@@ -1,4 +1,6 @@
 import jwt from 'jsonwebtoken'
+import {User} from "../Mongoose/UserSchema";
+import {UnauthorizedException} from "@nestjs/common";
 
 const secretKey = 'gergergergerg'
 
@@ -15,4 +17,9 @@ export const getResultByToken = (refreshToken: string) : {userId: string, device
 export const createToken = async (id: string, deviceId: string, ip: string, exp: string) => {
     return jwt.sign({userId: id, ip, deviceId}, secretKey, {expiresIn: exp})
 
+}
+
+export const findUserByLoginOrEmail = async (loginOrEmail, UserModel): Promise<User | null>  => {
+    const filter = {$or: [{'AccountData.email': loginOrEmail}, {'AccountData.username': loginOrEmail}]}
+    return await UserModel.findOne(filter)
 }
