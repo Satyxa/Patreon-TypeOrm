@@ -10,7 +10,6 @@ import {createToken} from "../Utils/authentication";
 export class LoginService {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
     async login(payload, ip, headers){
-        try {
             const {loginOrEmail, password} = payload
             const filter = {$or: [{'AccountData.email': loginOrEmail}, {'AccountData.username': loginOrEmail}]}
             const foundUser: User | null = await this.UserModel.findOne(filter)
@@ -34,9 +33,5 @@ export class LoginService {
             } else {
                 throw new UnauthorizedException()
             }
-        } catch (err) {
-            console.log(err, `=> post "/login" loginRouter`)
-            return null
-        }
     }
 }
