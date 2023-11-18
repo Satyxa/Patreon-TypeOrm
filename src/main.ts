@@ -6,7 +6,7 @@ import {HttpExceptionFilter} from "./Middleware/exception.filter";
 import {ErrorsType} from "./Types/types";
 import {BlogService} from "./Services/blog.service";
 import {PostService} from "./Services/post.service";
-
+import cookieParser from 'cookie-parser';
 @Controller('/delete-all')
 class deleteAll {
   constructor(private readonly UserService: UserService,
@@ -24,6 +24,7 @@ class deleteAll {
 async function Server() {
   const app = await NestFactory.create(AppModule);
   app.enableCors()
+  app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({exceptionFactory: (errors) => {
     const errorsForRes: ErrorsType[] = []
       errors.forEach((e) => {

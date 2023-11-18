@@ -19,7 +19,7 @@ export class LoginService {
                 let deviceName = headers["user-agent"]
                 const deviceId = uuid.v4()
                 const token = await createToken(foundUser.id, deviceId, ip,'10h')
-                // const RefreshToken = await createToken(foundUser.id, deviceId,ip, '20h')
+                const RefreshToken = await createToken(foundUser.id, deviceId,ip, '20h')
                 const {iat} = jwt.decode(token) as {iat: number}
                 const newDevice = {
                     ip,
@@ -29,7 +29,7 @@ export class LoginService {
                 }
                 await this.UserModel.updateOne(filter, {$push: {sessions: newDevice}})
                 // res.cookie('refreshToken', RefreshToken, {httpOnly: true,secure: true})
-                return {accessToken: token}
+                return {accessToken: token, RefreshToken}
             } else {
                 throw new UnauthorizedException()
             }
