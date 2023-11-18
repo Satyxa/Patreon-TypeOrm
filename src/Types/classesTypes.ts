@@ -25,7 +25,7 @@ export class createBlogPayloadClass {
     @Length(0, 500)
     description: string
     @Length(0, 100)
-    @Matches('^https://([a-zA-Z0-9_-]+\\.)+[a-zA-Z0-9_-]+(\\/[a-zA-Z0-9_-]+)*\\/?$\n')
+    @Matches('^https://([a-zA-Z0-9_-]+.)+[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*/?$')
     websiteUrl: string
 }
 
