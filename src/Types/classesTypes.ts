@@ -36,7 +36,6 @@ export class createdPostPayloadClass {
     shortDescription: string
     @Length(0, 1000)
     content: string
-    @Length(1)
     blogId?: string
 }
 
