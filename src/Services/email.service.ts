@@ -3,7 +3,6 @@ import {InjectModel} from "@nestjs/mongoose";
 import {User, UserDocument} from "../Mongoose/UserSchema";
 import {Model} from "mongoose";
 import {findUserByLoginOrEmail} from "../Utils/authentication";
-import {EntityUtils} from "../Utils/EntityUtils";
 import {emailAdapter} from "../Utils/email-adapter";
 import * as uuid from 'uuid'
 @Injectable()

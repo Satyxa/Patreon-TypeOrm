@@ -1,5 +1,5 @@
 import * as uuid from "uuid";
-import {newestLikesT, reactionsT, UserAccountDBType, userViewT} from "../Types/types";
+import {commentsT, newestLikesT, reactionsT, UserAccountDBType, userViewT} from "../Types/types";
 import {User} from "../Mongoose/UserSchema";
 import bcrypt from "bcrypt";
 
@@ -88,5 +88,38 @@ export const EntityUtils = {
                 newestLikes: []
             }
         }
-}
+},
+    createViewComment: (comment: commentsT, userId: string) => {
+        return {
+            id: comment.id,
+            content: comment.content,
+            createdAt: comment.createdAt,
+            commentatorInfo: comment.commentatorInfo,
+            likesInfo: {
+                likesCount: comment.likesInfo.likesCount,
+                dislikesCount: comment.likesInfo.dislikesCount,
+                myStatus: comment.reactions.reduce((ac, r) => {
+                    if (r.userId == userId) {
+                        ac = r.status;
+                        return ac
+                    }
+                    return ac
+                }, 'None')
+            }
+        }
+    },
+    createReaction: (userId: string, status: string) => {
+        return {
+            userId,
+            status,
+            createdAt: new Date().toISOString()
+        }
+    },
+    createNewestLike: (userId: string, login: string) => {
+        return {
+            userId,
+            login,
+            addedAt: new Date().toISOString()
+        }
+    },
 }

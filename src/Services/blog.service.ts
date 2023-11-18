@@ -7,6 +7,7 @@ import {blogsPS, getValuesPS, postsPS} from "../Utils/PaginationAndSort";
 import * as uuid from 'uuid'
 import {Post, PostDocument} from "../Mongoose/PostSchema";
 import {EntityUtils} from "../Utils/EntityUtils";
+import {getResultByToken} from "../Utils/authentication";
 @Injectable()
 export class BlogService {
     constructor(
@@ -58,10 +59,15 @@ export class BlogService {
             }})
     }
 
-    async getPostsForBlog(id, payload) {
+    async getPostsForBlog(id, payload, headers) {
         let userId = ''
         const filter = {blogId: id}
 
+        if(headers.authorization){
+            const accessToken = headers.authorization.split(' ')[1]
+            const result = getResultByToken(accessToken)
+            if(result) userId = result.userId
+        }
         const blog = await this.BlogModel.findOne({id})
         if(!blog) throw new HttpException('Not Found', 404)
         let {posts, pagesCount, pageNumber, pageSize, totalCount} = await postsPS(this.PostModel, payload, filter)

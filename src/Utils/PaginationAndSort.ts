@@ -78,15 +78,17 @@ export const postsPS = async(PostModel, payload, filter = {}): Promise<any> => {
     return {posts, pagesCount, pageNumber, pageSize, totalCount}
 }
 
+export const commentsPS = async(CommentModel, payload, filter) => {
+    const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
+    const totalCount: number = await CommentModel.countDocuments(filter)
+    const pagesCount = Math.ceil(totalCount / pageSize)
 
-//
-// export const commentsPagAndSort = async(filter: FilterQuery<commentsT>, sortBy: string,
-//                                         sortDirection: SortOrder, pageSize: number, pageNumber: number) => {
-//     return  CommentModel
-//         .find(filter, { projection : { _id:0, postId: 0 }})
-//         .sort({[sortBy!]: sortDirection})
-//         .skip(pageSize * pageNumber - pageSize)
-//         .limit(pageSize)
-//         .lean()
-// }
-//
+    const comments = await CommentModel
+        .find(filter, { projection : { _id:0, postId: 0 }})
+        .sort({[sortBy!]: sortDirection})
+        .skip(pageSize * pageNumber - pageSize)
+        .limit(pageSize)
+        .lean()
+    return {comments, pagesCount, pageNumber, pageSize, totalCount}
+}
+

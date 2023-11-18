@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Headers, HttpCode, Param, Post, Put, Query} from '@nestjs/common';
 import {BlogService} from "../Services/blog.service";
 import {queryPayload} from "./user.controller";
 import {Blog} from "../Mongoose/BlogSchema";
@@ -40,8 +40,10 @@ export class BlogController {
         return await this.BlogService.updateBlog(id, updateBlogPayload)
     }
     @Get(':id/posts')
-    async getPostsForBlog(@Param('id') id: string, @Query() payload: queryPayload ) {
-        return await this.BlogService.getPostsForBlog(id, payload)
+    async getPostsForBlog(@Param('id') id: string,
+                          @Query() payload: queryPayload,
+                          @Headers() headers) {
+        return await this.BlogService.getPostsForBlog(id, payload, headers)
     }
     @Post(':id/posts')
     async createPostForBlog(@Param('id') id: string, @Body() createdPostPayload: createdPostPayloadType){

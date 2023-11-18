@@ -8,6 +8,7 @@ export class AuthGuard implements CanActivate {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        console.log(12)
         const req = context.switchToHttp().getRequest()
         if(!req.headers.authorization) throw new UnauthorizedException()
         const token = req.headers.authorization.split(' ')[1]
@@ -17,9 +18,12 @@ export class AuthGuard implements CanActivate {
         const tokenPayload = await getResultByToken(token)
         if(!tokenPayload) throw new UnauthorizedException()
         const {userId} = tokenPayload
-        const foundUser = await this.UserModel.findOne({id:userId}).lean()
+        const foundUser: User | null = await this.UserModel.findOne({id:userId}).lean()
         if(!foundUser) throw new UnauthorizedException()
-        else return true
+        else {
+            req.userId = foundUser.id
+            return true
+        }
         // const existDevice = foundUser.sessions.some(device => device.deviceId === deviceId)
         // const correctActiveDate = foundUser.sessions.some(date => date.lastActiveDate === iat.toString())
         // if(existDevice || correctActiveDate){
