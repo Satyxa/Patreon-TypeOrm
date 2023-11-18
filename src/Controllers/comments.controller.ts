@@ -10,7 +10,7 @@ import {
     Query,
     Headers,
     Req,
-    UseGuards
+    UseGuards, BadRequestException
 } from '@nestjs/common';
 import {PostService} from "../Services/post.service";
 import {CommentsService} from "../Services/comments.service";
@@ -30,6 +30,7 @@ export class CommentsController {
     @Get(':id')
     async getComment(@Param('id') id: string,
                      @Headers() headers) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.CommentsService.getComment(id, headers)
     }
 
@@ -39,6 +40,7 @@ export class CommentsController {
     async updateContent(@Param('id') id: string,
                         @Body('content') content: string,
                         @Req() req: any) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.CommentsService.updateContent(id, req.userId, content)
     }
 
@@ -47,6 +49,7 @@ export class CommentsController {
     @HttpCode(204)
     async deleteComment(@Param('id') id: string,
                         @Req() req: any) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.CommentsService.deleteComment(id, req.userId)
     }
 
@@ -56,6 +59,7 @@ export class CommentsController {
     async updateLikeStatus(@Param('id') id: string,
                         @Body('likeStatus') likeStatus: string,
                         @Req() req: any) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.CommentsService.updateLikeStatus(id, likeStatus, req.userId)
     }
 

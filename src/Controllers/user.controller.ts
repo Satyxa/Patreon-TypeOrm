@@ -1,4 +1,15 @@
-import {Body, Controller, Delete, Get, HttpCode, Param, Post, Query, UseGuards} from '@nestjs/common';
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    Param,
+    Post,
+    Query,
+    UseGuards
+} from '@nestjs/common';
 import { UserService } from '../Services/user.service';
 import {createUserPayloadType, UserAccountDBType, userViewT} from "../Types/types";
 import {User} from "../Mongoose/UserSchema";
@@ -25,6 +36,7 @@ export class UserController {
     }
     @Get(':id')
     async getOneUser(@Param('id') id: string): Promise<User | null> {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.UserService.getOneUser(id)
     }
     @UseGuards(BasicAuthGuard)
@@ -37,6 +49,7 @@ export class UserController {
     @Delete(':id')
     @HttpCode(204)
     async deleteUser(@Param('id') id: string){
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.UserService.deleteUser(id)
     }
 }

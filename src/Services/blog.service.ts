@@ -22,6 +22,7 @@ export class BlogService {
         return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: blogs})
     }
     async getOneBlog(id): Promise<Blog | null> {
+
         const blog = await this.BlogModel.findOne({id}, {_id: 0, __v: 0})
         if(!blog) throw new HttpException('Not Found', 404)
         return blog

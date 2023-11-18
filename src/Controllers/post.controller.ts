@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -43,6 +44,7 @@ export class PostController {
     @Get(':id')
     async getOnePost(@Param('id') id: string,
                      @Headers() headers) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.PostService.getOnePost(id, headers)
     }
 
@@ -54,12 +56,14 @@ export class PostController {
     @Delete(':id')
     @HttpCode(204)
     async deletePost(@Param('id') id: string) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.PostService.deletePost(id)
     }
 
     @Put(':id')
     @HttpCode(204)
     async updatePost(@Param('id') id: string, @Body() updatePostPayload: createdPostPayloadType) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.PostService.updatePost(id, updatePostPayload)
     }
 
@@ -71,6 +75,7 @@ export class PostController {
     async updatePostLikeStatus(@Param('id') id: string,
                                @Body('likeStatus') likeStatus: string,
                                @Req() req: any) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.PostService.updatePostLikeStatus(id, likeStatus, req.userId)
     }
 
@@ -82,6 +87,7 @@ export class PostController {
     async getAllCommentsForPost(@Param('id') id: string,
                                 @Query() payload: queryPayload,
                                 @Headers() headers) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return this.PostService.getCommentsForOnePost(id, payload, headers)
     }
 
@@ -90,6 +96,7 @@ export class PostController {
     async createCommentForPost(@Param('id') id: string,
                                @Body('content') content: string,
                                @Req() req: any) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return this.PostService.createCommentForPost(id, content, req.userId)
     }
 

@@ -1,4 +1,17 @@
-import {Body, Controller, Delete, Get, Headers, HttpCode, Param, Post, Put, Query, UseGuards} from '@nestjs/common';
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Headers,
+    HttpCode,
+    Param,
+    Post,
+    Put,
+    Query,
+    UseGuards
+} from '@nestjs/common';
 import {BlogService} from "../Services/blog.service";
 import {queryPayload} from "./user.controller";
 import {Blog} from "../Mongoose/BlogSchema";
@@ -23,6 +36,7 @@ export class BlogController {
     }
     @Get(':id')
     async getOneBlog(@Param('id') id: string): Promise<Blog | null>{
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.BlogService.getOneBlog(id)
     }
     @UseGuards(BasicAuthGuard)
@@ -35,22 +49,27 @@ export class BlogController {
     @Delete(':id')
     @HttpCode(204)
     async deleteBlog(@Param('id') id: string) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.BlogService.deleteBlog(id)
     }
     @UseGuards(BasicAuthGuard)
     @Put(':id')
     @HttpCode(204)
-    async updateBlog(@Param('id') id: string, @Body() updateBlogPayload: createBlogPayloadType) {
+    async updateBlog(@Param('id') id: string,
+                     @Body() updateBlogPayload: createBlogPayloadType) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.BlogService.updateBlog(id, updateBlogPayload)
     }
     @Get(':id/posts')
     async getPostsForBlog(@Param('id') id: string,
                           @Query() payload: queryPayload,
                           @Headers() headers) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.BlogService.getPostsForBlog(id, payload, headers)
     }
     @Post(':id/posts')
     async createPostForBlog(@Param('id') id: string, @Body() createdPostPayload: createdPostPayloadType){
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         createdPostPayload.blogId = id
         return await this.PostService.createPost(createdPostPayload)
     }
