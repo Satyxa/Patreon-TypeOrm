@@ -24,7 +24,7 @@ type createBlogPayloadType = {
 
 @Controller('comments')
 export class CommentsController {
-    constructor(private readonly CommentsService: CommentsService, private readonly PostService: PostService) {
+    constructor(private readonly CommentsService: CommentsService) {
     }
 
     @Get(':id')

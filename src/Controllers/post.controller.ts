@@ -15,19 +15,13 @@ import {
 } from '@nestjs/common';
 import {PostService} from "../Services/post.service";
 import {AuthGuard} from "../Middleware/AuthGuard";
+import {createdPostPayloadClass} from "../Types/classesTypes";
 
 type queryPayload = {
     pageNumber: number,
     pageSize: number,
     sortBy: string,
     sortDirection: string
-}
-
-export type createdPostPayloadType = {
-    title: string,
-    shortDescription: string,
-    content: string,
-    blogId?: string
 }
 
 @Controller('posts')
@@ -49,7 +43,7 @@ export class PostController {
     }
 
     @Post()
-    async createPost(@Body() createdPostPayload: createdPostPayloadType) {
+    async createPost(@Body() createdPostPayload: createdPostPayloadClass) {
         return await this.PostService.createPost(createdPostPayload)
     }
 
@@ -62,7 +56,7 @@ export class PostController {
 
     @Put(':id')
     @HttpCode(204)
-    async updatePost(@Param('id') id: string, @Body() updatePostPayload: createdPostPayloadType) {
+    async updatePost(@Param('id') id: string, @Body() updatePostPayload: createdPostPayloadClass) {
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.PostService.updatePost(id, updatePostPayload)
     }

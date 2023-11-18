@@ -18,12 +18,8 @@ import {Blog} from "../Mongoose/BlogSchema";
 import {createdPostPayloadType} from "./post.controller";
 import {PostService} from "../Services/post.service";
 import {BasicAuthGuard} from "../Middleware/AuthGuard";
+import {createBlogPayloadClass, createdPostPayloadClass} from "../Types/classesTypes";
 
-type createBlogPayloadType = {
-    name: string,
-    description: string,
-    websiteUrl: string
-}
 
 @Controller('blogs')
 export class BlogController {
@@ -41,7 +37,7 @@ export class BlogController {
     }
     @UseGuards(BasicAuthGuard)
     @Post()
-    async createBlog(@Body() createBlogPayload: createBlogPayloadType) {
+    async createBlog(@Body() createBlogPayload: createBlogPayloadClass) {
         const {name, description, websiteUrl} = createBlogPayload
         return this.BlogService.createBlog(name, description, websiteUrl)
     }
@@ -56,7 +52,7 @@ export class BlogController {
     @Put(':id')
     @HttpCode(204)
     async updateBlog(@Param('id') id: string,
-                     @Body() updateBlogPayload: createBlogPayloadType) {
+                     @Body() updateBlogPayload: createBlogPayloadClass) {
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.BlogService.updateBlog(id, updateBlogPayload)
     }
@@ -68,7 +64,7 @@ export class BlogController {
         return await this.BlogService.getPostsForBlog(id, payload, headers)
     }
     @Post(':id/posts')
-    async createPostForBlog(@Param('id') id: string, @Body() createdPostPayload: createdPostPayloadType){
+    async createPostForBlog(@Param('id') id: string, @Body() createdPostPayload: createdPostPayloadClass){
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         createdPostPayload.blogId = id
         return await this.PostService.createPost(createdPostPayload)
