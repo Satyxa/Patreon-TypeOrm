@@ -25,17 +25,13 @@ async function Server() {
   const app = await NestFactory.create(AppModule);
   app.enableCors()
   app.useGlobalPipes(new ValidationPipe({exceptionFactory: (errors) => {
-      console.log('exceptionFactory')
     const errorsForRes: ErrorsType[] = []
-      console.log(1)
       errors.forEach((e) => {
         const zeroKey = Object.keys(e.constraints!)[0]
-        console.log(2)
         errorsForRes.push({
           field: e.property,
           message: e.constraints![zeroKey]
         })
-        console.log(3)
       })
       console.log('exceptionFactory')
       throw new BadRequestException(errorsForRes)

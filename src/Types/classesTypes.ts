@@ -1,4 +1,5 @@
 import {IsEmail, IsNotEmpty, isString, Length, Matches} from "class-validator";
+import {Transform} from "class-transformer";
 
 export class createUserPayloadClass {
     @Length(3, 10)
@@ -20,21 +21,25 @@ export class emailClass {
 }
 
 export class createBlogPayloadClass {
-    @Length(0, 15)
+    @Transform(param => param.value.trim())
+    @Length(1, 15)
     name: string
-    @Length(0, 500)
+    @Length(1, 500)
     description: string
-    @Length(0, 100)
-    @Matches('^https://([a-zA-Z0-9_-]+.)+[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*/?$')
+    @Length(1, 100)
+    @Matches('^https://([a-zA-Z0-9_-]+.)+[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*/?$', '')
     websiteUrl: string
 }
 
 export class createdPostPayloadClass {
-    @Length(0, 30)
+    @Transform(param => param.value.trim())
+    @Length(1, 30)
     title: string
-    @Length(0, 100)
+    @Transform(param => param.value.trim())
+    @Length(1, 100)
     shortDescription: string
-    @Length(0, 1000)
+    @Transform(param => param.value.trim())
+    @Length(1, 1000)
     content: string
     blogId?: string
 }

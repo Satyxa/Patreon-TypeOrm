@@ -15,7 +15,6 @@ import {
 import {BlogService} from "../Services/blog.service";
 import {queryPayload} from "./user.controller";
 import {Blog} from "../Mongoose/BlogSchema";
-import {createdPostPayloadType} from "./post.controller";
 import {PostService} from "../Services/post.service";
 import {BasicAuthGuard} from "../Middleware/AuthGuard";
 import {createBlogPayloadClass, createdPostPayloadClass} from "../Types/classesTypes";
