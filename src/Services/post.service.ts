@@ -107,6 +107,7 @@ export class PostService {
             const result = getResultByToken(accessToken)
             if (result) userId = result.userId
         }
+
         const viewComments = comments.map(comment => (EntityUtils.createViewComment(comment, userId)))
 
         return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: viewComments})

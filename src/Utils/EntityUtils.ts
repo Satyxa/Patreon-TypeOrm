@@ -94,7 +94,10 @@ export const EntityUtils = {
             id: comment.id,
             content: comment.content,
             createdAt: comment.createdAt,
-            commentatorInfo: comment.commentatorInfo,
+            commentatorInfo: {
+                userId: comment.commentatorInfo.userId,
+                userLogin: comment.commentatorInfo.userLogin
+            },
             likesInfo: {
                 likesCount: comment.likesInfo.likesCount,
                 dislikesCount: comment.likesInfo.dislikesCount,

@@ -83,10 +83,8 @@ export const commentsPS = async(CommentModel, payload, filter) => {
     const totalCount: number = await CommentModel.countDocuments(filter)
     const pagesCount = Math.ceil(totalCount / pageSize)
 
-    const projection = {'commentatorInfo._id': 0, _id:0, postId: 0}
-
     const comments = await CommentModel
-        .find(filter, { projection })
+        .find(filter, { projection: {_id:0, postId: 0} })
         .sort({[sortBy!]: sortDirection})
         .skip(pageSize * pageNumber - pageSize)
         .limit(pageSize)

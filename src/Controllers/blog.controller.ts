@@ -61,6 +61,7 @@ export class BlogController {
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.BlogService.getPostsForBlog(id, payload, headers)
     }
+    @UseGuards(BasicAuthGuard)
     @Post(':id/posts')
     async createPostForBlog(@Param('id') id: string, @Body() createdPostPayload: createdPostForBlogPayloadClass){
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
