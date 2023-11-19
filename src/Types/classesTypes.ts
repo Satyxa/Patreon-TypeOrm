@@ -1,5 +1,17 @@
-import {Equals, IsEmail, IsIn, isIn, IsNotEmpty, isString, Length, Matches, ValidateIf} from "class-validator";
+import {
+    Equals,
+    IsEmail,
+    IsIn,
+    isIn,
+    IsNotEmpty,
+    isString,
+    Length,
+    Matches,
+    Validate,
+    ValidateIf
+} from "class-validator";
 import {Transform} from "class-transformer";
+import {checkBlogId} from "../CustomValidate";
 
 export class createUserPayloadClass {
     @Length(3, 10)
@@ -41,6 +53,9 @@ export class createdPostPayloadClass {
     @Transform(param => param.value.trim())
     @Length(1, 1000)
     content: string
+    @Validate(checkBlogId, {
+        message: 'Title is too short or long!',
+    })
     blogId?: string
 }
 const availableValues = ['Like', 'Dislike', 'None']
@@ -52,6 +67,6 @@ export class LikesPayloadClass {
 
 export class CommentContentClass {
     @Transform(param => param.value.trim())
-    @Length(1, 1000)
+    @Length(20, 1000)
     content: string
 }

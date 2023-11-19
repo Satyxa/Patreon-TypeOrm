@@ -3,7 +3,7 @@ import {Post, PostDocument} from "../Mongoose/PostSchema";
 import {Model} from "mongoose";
 import {commentsPS, postsPS} from "../Utils/PaginationAndSort";
 import {EntityUtils} from "../Utils/EntityUtils";
-import {HttpException, Injectable, UnauthorizedException} from "@nestjs/common";
+import {BadRequestException, HttpException, Injectable, UnauthorizedException} from "@nestjs/common";
 import {blogsT, newestLikesT, postT, reactionsT, UserAccountDBType} from "../Types/types";
 import {Blog, BlogDocument} from "../Mongoose/BlogSchema";
 import {getResultByToken} from "../Utils/authentication";
@@ -77,7 +77,8 @@ export class PostService {
         const {title, shortDescription, content, blogId} = payload
         const post = await this.PostModel.findOne({id})
         const blog: blogsT | null = await this.BlogModel.findOne({id: blogId})
-        if (!blog || !post) throw new HttpException('Not Found', 404)
+        if (!post) throw new HttpException('Not Found', 404)
+        if(!blog) throw new BadRequestException([{ field: 'blogId', message: 'Such blog doesnt exist'}])
         await this.PostModel.updateOne({id},
             {
                 $set: {

@@ -21,6 +21,7 @@ import {EmailController} from "./Controllers/email.controller";
 import {CommentsController} from "./Controllers/comments.controller";
 import {CommentsService} from "./Services/comments.service";
 import {Comment, CommentSchema} from "./Mongoose/CommentSchema";
+import {checkBlogId} from "./CustomValidate";
 const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@clusterblog.jvi7su7.mongodb.net/patreon?retryWrites=true&w=majority'
 @Module({
   imports: [
@@ -48,6 +49,6 @@ const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@c
   CommentsController],
   providers: [AppService, UserService, BlogService, PostService,
     RegistrationService, LoginService, EmailService,
-  CommentsService],
+  CommentsService, checkBlogId],
 })
 export class AppModule {}
