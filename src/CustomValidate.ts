@@ -10,7 +10,6 @@ export class checkBlogId implements ValidatorConstraintInterface {
     constructor(@InjectModel(Blog.name) private BlogModel: Model<BlogDocument>) {}
     async validate(blogId: string) {
         const blog = await this.BlogModel.findOne({id: blogId}).lean()
-        console.log(blog)
         return blog ? true : false
     }
 
