@@ -57,29 +57,28 @@ export class CommentsService {
         const userLikeStatus = commentCopy.reactions.filter(reaction => reaction.userId === userId)[0]
 
         if(!userLikeStatus && likeStatus !== 'None'){
-            const likesCount = likeStatus =='Like' ? 1 : 0
-            const dislikesCount = likeStatus == "Dislike" ? 1 : 0
+            const likesCount = likeStatus === 'Like' ? 1 : 0
+            const dislikesCount = likeStatus === "Dislike" ? 1 : 0
             await this.CommentModel.updateOne({id: commentId},
                 {$push: {reactions: reaction}, $inc:  {'likesInfo.likesCount': likesCount, 'likesInfo.dislikesCount': dislikesCount},})
         }
 
         if (userLikeStatus && userLikeStatus.status !== likeStatus){
-            if(userLikeStatus.status == 'Like' && likeStatus =='Dislike'){
+            if(userLikeStatus.status === 'Like' && likeStatus === 'Dislike'){
                  await this.CommentModel.updateOne({id: commentId, reactions: {$elemMatch: {'userId': userLikeStatus.userId}}},
                     {$set: {reactions:reaction}, $inc: {'likesInfo.likesCount': -1, 'likesInfo.dislikesCount': 1},}, {returnDocument: "after"})}
 
-            if(userLikeStatus.status == 'Like' && likeStatus == 'None'){
+            if(userLikeStatus.status === 'Like' && likeStatus === 'None'){
                 await this.CommentModel.updateOne({id: commentId},
                     {$pull: {reactions: {userId}}, $inc: {'likesInfo.likesCount': -1},})}
 
-            if(userLikeStatus.status == 'Dislike' && likeStatus =='Like'){
+            if(userLikeStatus.status === 'Dislike' && likeStatus ==='Like'){
                 await this.CommentModel.updateOne({id: commentId, reactions: {$elemMatch: {'userId': userLikeStatus.userId}}},
                     {$set: {reactions: reaction}, $inc: {'likesInfo.dislikesCount': -1, 'likesInfo.likesCount': 1},})}
 
-            if(userLikeStatus.status == 'Dislike' && likeStatus == 'None'){
+            if(userLikeStatus.status === 'Dislike' && likeStatus === 'None'){
                 await this.CommentModel.updateOne({id: commentId},
-                    {$pull: {reactions: {userId}, $inc: {'likesInfo.dislikesCount': -1}}})
-            }
+                    {$pull: {reactions: {userId}}, $inc: {'likesInfo.dislikesCount': -1}})}
         }
     }
 }
