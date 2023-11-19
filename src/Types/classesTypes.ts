@@ -1,4 +1,4 @@
-import {IsEmail, IsNotEmpty, isString, Length, Matches} from "class-validator";
+import {Equals, IsEmail, IsNotEmpty, isString, Length, Matches, ValidateIf} from "class-validator";
 import {Transform} from "class-transformer";
 
 export class createUserPayloadClass {
@@ -45,6 +45,7 @@ export class createdPostPayloadClass {
 }
 
 export class LikesPayloadClass {
+    @ValidateIf(s => s === 'Like' || s === 'Dislike' || s === 'None')
     @Transform(param => param.value.trim())
     @Length(4, 7)
     likeStatus: 'Like' | 'Dislike' | 'None'
