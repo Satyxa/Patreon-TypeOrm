@@ -12,6 +12,7 @@ import {
 } from "class-validator";
 import {Transform} from "class-transformer";
 import {checkBlogId} from "../CustomValidate";
+import {Optional} from "@nestjs/common";
 
 export class createUserPayloadClass {
     @Length(3, 10)
@@ -57,6 +58,20 @@ export class createdPostPayloadClass {
         message: 'Title is too short or long!',
     })
     blogId?: string
+}
+
+export class createdPostForBlogPayloadClass {
+    @Transform(param => param.value.trim())
+    @Length(1, 30)
+    title: string
+    @Transform(param => param.value.trim())
+    @Length(1, 100)
+    shortDescription: string
+    @Transform(param => param.value.trim())
+    @Length(1, 1000)
+    content: string
+    @Optional()
+    blogId: string
 }
 const availableValues = ['Like', 'Dislike', 'None']
 export class LikesPayloadClass {
