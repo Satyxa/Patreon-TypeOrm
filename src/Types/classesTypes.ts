@@ -44,7 +44,14 @@ export class createdPostPayloadClass {
     blogId?: string
 }
 
-export class LikeStatusClass {
+export class LikesPayloadClass {
+    @Transform(param => param.value.trim())
     @Length(4, 7)
     likeStatus: 'Like' | 'Dislike' | 'None'
+}
+
+export class CommentContentClass {
+    @Transform(param => param.value.trim())
+    @Length(1, 1000)
+    content: string
 }

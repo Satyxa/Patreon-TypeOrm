@@ -15,6 +15,7 @@ import {
 import {PostService} from "../Services/post.service";
 import {CommentsService} from "../Services/comments.service";
 import {AuthGuard} from "../Middleware/AuthGuard";
+import {CommentContentClass, LikesPayloadClass} from "../Types/classesTypes";
 
 type createBlogPayloadType = {
     name: string,
@@ -38,10 +39,10 @@ export class CommentsController {
     @Put(':id')
     @HttpCode(204)
     async updateContent(@Param('id') id: string,
-                        @Body('content') content: string,
+                        @Body() CommentContentPayload: CommentContentClass,
                         @Req() req: any) {
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-        return await this.CommentsService.updateContent(id, req.userId, content)
+        return await this.CommentsService.updateContent(id, req.userId, CommentContentPayload.content)
     }
 
     @UseGuards(AuthGuard)
@@ -57,10 +58,10 @@ export class CommentsController {
     @Put(':id/like-status')
     @HttpCode(204)
     async updateLikeStatus(@Param('id') id: string,
-                        @Body('likeStatus') likeStatus: string,
+                        @Body() likesPayload: LikesPayloadClass,
                         @Req() req: any) {
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-        return await this.CommentsService.updateLikeStatus(id, likeStatus, req.userId)
+        return await this.CommentsService.updateLikeStatus(id, likesPayload.likeStatus, req.userId)
     }
 
 }
