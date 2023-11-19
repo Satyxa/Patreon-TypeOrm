@@ -14,7 +14,7 @@ import {
     UseGuards
 } from '@nestjs/common';
 import {PostService} from "../Services/post.service";
-import {AuthGuard} from "../Middleware/AuthGuard";
+import {AuthGuard, BasicAuthGuard} from "../Middleware/AuthGuard";
 import {CommentContentClass, createdPostPayloadClass, LikesPayloadClass} from "../Types/classesTypes";
 
 type queryPayload = {
@@ -41,12 +41,12 @@ export class PostController {
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.PostService.getOnePost(id, headers)
     }
-
+    @UseGuards(BasicAuthGuard)
     @Post()
     async createPost(@Body() createdPostPayload: createdPostPayloadClass) {
         return await this.PostService.createPost(createdPostPayload)
     }
-
+    @UseGuards(BasicAuthGuard)
     @Delete(':id')
     @HttpCode(204)
     async deletePost(@Param('id') id: string) {
@@ -54,6 +54,7 @@ export class PostController {
         return await this.PostService.deletePost(id)
     }
 
+    @UseGuards(BasicAuthGuard)
     @Put(':id')
     @HttpCode(204)
     async updatePost(@Param('id') id: string,
