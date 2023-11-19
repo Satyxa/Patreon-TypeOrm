@@ -82,6 +82,6 @@ export class LikesPayloadClass {
 
 export class CommentContentClass {
     @Transform(param => param.value.trim())
-    @Length(20, 1000)
+    @Length(20, 300)
     content: string
 }
