@@ -5,6 +5,7 @@ import {Model} from "mongoose";
 import {createUserPayloadClass} from "../Types/classesTypes";
 import {LoginService} from "../Services/login.service";
 import Cookies from "nodemailer/lib/fetch/cookies";
+import {Throttle} from "@nestjs/throttler";
 
 @Controller('auth')
 export class LoginController {
@@ -15,7 +16,7 @@ export class LoginController {
         return this.LoginService.getMe(headers.authorization)
     }
 
-
+    @Throttle({ default: { limit: 5, ttl: 10000 } })
     @Post('login')
     @HttpCode(200)
     async login(@Body() signInPayload,

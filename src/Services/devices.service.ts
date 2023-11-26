@@ -25,11 +25,11 @@ export class DevicesService {
         await this.UserModel.updateOne({id: tokenPayload.userId}, {$pull: {sessions: {deviceId}}})
     }
 
-    async deleteDevices(refreshToken, userId){
-        if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
+    async deleteDevices(refreshToken) {
+        if (!getResultByToken(refreshToken)) throw new UnauthorizedException()
         const tokenPayload = getResultByToken(refreshToken)
-        if(!tokenPayload) throw new UnauthorizedException()
+        if (!tokenPayload) throw new UnauthorizedException()
         const {deviceId} = tokenPayload
-        await this.UserModel.updateOne({id: userId},{$pull: {sessions: {deviceId: {$ne: deviceId}}}})
+        await this.UserModel.updateOne({id: tokenPayload.userId}, {$pull: {sessions: {deviceId: {$ne: deviceId}}}})
     }
 }
