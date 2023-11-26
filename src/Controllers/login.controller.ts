@@ -6,17 +6,17 @@ import {createUserPayloadClass} from "../Types/classesTypes";
 import {LoginService} from "../Services/login.service";
 import Cookies from "nodemailer/lib/fetch/cookies";
 
-@Controller('auth/login')
+@Controller('auth')
 export class LoginController {
     constructor(private readonly LoginService: LoginService) {}
 
-    @Get()
+    @Get('me')
     async getMe(@Headers() headers){
         return this.LoginService.getMe(headers.authorization)
     }
 
 
-    @Post()
+    @Post('login')
     @HttpCode(200)
     async login(@Body() signInPayload,
                 @Ip() ip, @Headers() headers,
@@ -26,14 +26,13 @@ export class LoginController {
         return {accessToken}
     }
 
-    @Post()
+    @Post('logout')
     @HttpCode(204)
     async logout(@Req() req: any){
         return this.LoginService.logout(req.cookies.refreshToken)
     }
 
-    @Post()
-    @HttpCode(200)
+    @Post('refresh-token')
     async getRefreshToken(@Req() req: any,
                           @Res({ passthrough: true }) res: any){
         const {accessToken, RefreshToken} = await this.LoginService.getRefreshToken(req.cookies.refreshToken)
