@@ -25,7 +25,8 @@ import {checkBlogId} from "./CustomValidate";
 import {DevicesController} from "./Controllers/devices.controller";
 import {DevicesService} from "./Services/devices.service";
 import {TokenBlackList, TokenBlackListSchema} from "./Mongoose/TokenBlackListSchema";
-import {ThrottlerModule} from "@nestjs/throttler";
+import {ThrottlerGuard, ThrottlerModule} from "@nestjs/throttler";
+import {APP_GUARD} from "@nestjs/core";
 
 const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@clusterblog.jvi7su7.mongodb.net/patreon?retryWrites=true&w=majority'
 
@@ -65,7 +66,11 @@ const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@c
         CommentsController, DevicesController],
     providers: [AppService, UserService, BlogService, PostService,
         RegistrationService, LoginService, EmailService,
-        CommentsService, checkBlogId, DevicesService],
+        CommentsService, checkBlogId, DevicesService,
+        {
+            provide: APP_GUARD,
+            useClass: ThrottlerGuard,
+        }],
 })
 export class AppModule {
 }

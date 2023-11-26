@@ -5,7 +5,7 @@ import {Throttle} from "@nestjs/throttler";
 @Controller('auth/registration')
 export class RegistrationController {
     constructor(private readonly RegistrationService: RegistrationService) {}
-    @Throttle({ default: { limit: 5, ttl: 10000 } })
+    @Throttle({ default: { limit: 5, ttl: 10000,  } })
     @Post()
     @HttpCode(204)
     async registration(@Body() createUserPayload: createUserPayloadClass) {
