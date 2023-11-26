@@ -6,15 +6,18 @@ import * as uuid from 'uuid'
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {createToken, getResultByToken} from "../Utils/authentication";
+import {TokenBlackList, TokenBlackListDocument} from "../Mongoose/TokenBlackListSchema";
 
 export class LoginService {
-    constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
+    constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>,
+                @InjectModel(TokenBlackList.name) private TokenBlackListModel: Model<TokenBlackListDocument>) {}
 
     async getMe(headAuth){
         if(!headAuth) throw new UnauthorizedException()
 
         const token = headAuth!.split(' ')[1]
         if(!getResultByToken(token)) throw new UnauthorizedException()
+        if(await this.TokenBlackListModel.findOne({token})) throw new UnauthorizedException()
         const {userId} = getResultByToken(token)
         if(!userId) throw new UnauthorizedException()
 
@@ -54,18 +57,18 @@ export class LoginService {
     async logout(refreshToken){
         if (!refreshToken) throw new UnauthorizedException()
         if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
-
         const tokenPayload = getResultByToken(refreshToken)
         if(!tokenPayload) throw new UnauthorizedException()
 
         const {userId, deviceId} = tokenPayload
-
+        await this.TokenBlackListModel.create({token: refreshToken, addedAt: new Date()})
         await this.UserModel.updateOne({id: userId}, {$pull: {sessions: {deviceId}}})
     }
 
     async getRefreshToken(refreshToken, ) {
         if(!refreshToken) throw new UnauthorizedException()
         if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
+        if(await this.TokenBlackListModel.findOne({token: refreshToken})) throw new UnauthorizedException()
         const tokenPayload: any = getResultByToken(refreshToken)
         if(new Date(tokenPayload.exp * 1000) < new Date()) throw new UnauthorizedException()
 

@@ -24,6 +24,7 @@ import {Comment, CommentSchema} from "./Mongoose/CommentSchema";
 import {checkBlogId} from "./CustomValidate";
 import {DevicesController} from "./Controllers/devices.controller";
 import {DevicesService} from "./Services/devices.service";
+import {TokenBlackList, TokenBlackListSchema} from "./Mongoose/TokenBlackListSchema";
 const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@clusterblog.jvi7su7.mongodb.net/patreon?retryWrites=true&w=majority'
 @Module({
   imports: [
@@ -44,6 +45,10 @@ const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@c
       MongooseModule.forFeature([{
         name: Comment.name,
         schema: CommentSchema
+      }]),
+      MongooseModule.forFeature([{
+        name: TokenBlackList.name,
+        schema: TokenBlackListSchema
       }])
   ],
   controllers: [AppController, UserController, BlogController,

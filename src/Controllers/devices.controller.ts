@@ -1,10 +1,4 @@
-import {Body, Controller, Delete, Get, Headers, HttpCode, Ip, Param, Post, Req, Res} from "@nestjs/common";
-import {InjectModel} from "@nestjs/mongoose";
-import {User, UserDocument} from "../Mongoose/UserSchema";
-import {Model} from "mongoose";
-import {createUserPayloadClass} from "../Types/classesTypes";
-import {LoginService} from "../Services/login.service";
-import Cookies from "nodemailer/lib/fetch/cookies";
+import { Controller, Delete, Get, Param, Req} from "@nestjs/common";
 import {DevicesService} from "../Services/devices.service";
 
 @Controller('security/devices')
