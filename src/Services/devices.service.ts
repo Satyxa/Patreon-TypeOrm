@@ -3,12 +3,16 @@ import {User, UserDocument} from "../Mongoose/UserSchema";
 import {Model} from "mongoose";
 import {HttpException, UnauthorizedException} from "@nestjs/common";
 import {getResultByToken} from "../Utils/authentication";
+import {SessionsType} from "../Types/types";
 
 export class DevicesService {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
 
-    async getDevices(userId){
-        const foundUser: User | null = await this.UserModel.findOne({id: userId})
+    async getDevices(refreshToken){
+        console.log(66666666)
+        if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
+        const tokenPayload: any = getResultByToken(refreshToken)
+        const foundUser: User | null = await this.UserModel.findOne({id: tokenPayload.userId})
         if(!foundUser) throw new UnauthorizedException()
         return foundUser!.sessions
     }
