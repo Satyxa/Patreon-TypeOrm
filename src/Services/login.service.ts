@@ -57,6 +57,7 @@ export class LoginService {
     async logout(refreshToken){
         if (!refreshToken) throw new UnauthorizedException()
         if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
+        if(await this.TokenBlackListModel.findOne({token: refreshToken})) throw new UnauthorizedException()
         const tokenPayload = getResultByToken(refreshToken)
         if(!tokenPayload) throw new UnauthorizedException()
 
