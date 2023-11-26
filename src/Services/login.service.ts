@@ -65,10 +65,11 @@ export class LoginService {
         await this.UserModel.updateOne({id: userId}, {$pull: {sessions: {deviceId}}})
     }
 
-    async getRefreshToken(refreshToken, ) {
+    async getRefreshToken(refreshToken) {
         if(!refreshToken) throw new UnauthorizedException()
         if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
         if(await this.TokenBlackListModel.findOne({token: refreshToken})) throw new UnauthorizedException()
+        await this.TokenBlackListModel.create({token: refreshToken, addedAt: new Date()})
         const tokenPayload: any = getResultByToken(refreshToken)
         if(new Date(tokenPayload.exp * 1000) < new Date()) throw new UnauthorizedException()
 
