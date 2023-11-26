@@ -18,14 +18,14 @@ export class LoginService {
         const token = headAuth!.split(' ')[1]
         if(!getResultByToken(token)) throw new UnauthorizedException()
         if(await this.TokenBlackListModel.findOne({token})) throw new UnauthorizedException()
-        const {userId} = getResultByToken(token)
-        if(!userId) throw new UnauthorizedException()
+        const tokenPayload = getResultByToken(token)
+        if(!tokenPayload || !tokenPayload.userId) throw new UnauthorizedException()
 
-        const foundUser: User | null = await this.UserModel.findOne({id:userId})
+        const foundUser: User | null = await this.UserModel.findOne({id: tokenPayload.userId})
         if(!foundUser) throw new HttpException('NOT FOUND', 404)
         else {
             const {email, username} = foundUser.AccountData
-            return {email, login: username, userId}
+            return {email, login: username, userId: tokenPayload.userId}
         }
     }
 

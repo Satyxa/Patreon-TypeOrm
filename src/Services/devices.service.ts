@@ -11,7 +11,8 @@ export class DevicesService {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
 
     async getDevices(userId){
-        const foundUser: User = await this.UserModel.findOne({id: userId})
+        const foundUser: User | null = await this.UserModel.findOne({id: userId})
+        if(!foundUser) throw new UnauthorizedException()
         return foundUser!.sessions
     }
 
