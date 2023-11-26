@@ -33,6 +33,7 @@ export class LoginController {
     }
 
     @Post('refresh-token')
+    @HttpCode(200)
     async getRefreshToken(@Req() req: any,
                           @Res({ passthrough: true }) res: any){
         const {accessToken, RefreshToken} = await this.LoginService.getRefreshToken(req.cookies.refreshToken)

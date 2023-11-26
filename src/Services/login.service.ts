@@ -14,6 +14,7 @@ export class LoginService {
         if(!headAuth) throw new UnauthorizedException()
 
         const token = headAuth!.split(' ')[1]
+        if(!getResultByToken(token)) throw new UnauthorizedException()
         const {userId} = getResultByToken(token)
         if(!userId) throw new UnauthorizedException()
 
