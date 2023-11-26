@@ -21,7 +21,7 @@ export class DevicesService {
         const tokenPayload: any = getResultByToken(refreshToken)
         const user: User | null = await this.UserModel.findOne({'sessions.deviceId': deviceId})
         if(!user) throw new HttpException('NOT FOUND', 404)
-        if(tokenPayload.userId !== user.id) throw new UnauthorizedException()
+        if(tokenPayload.userId !== user.id) throw new HttpException('FORBIDDEN', 403)
         await this.UserModel.updateOne({id: tokenPayload.userId}, {$pull: {sessions: {deviceId}}})
     }
 
