@@ -13,7 +13,7 @@ class Sessions {
     @Prop()
     deviceId: string
     @Prop()
-    lastActiveDate: Date
+    lastActiveDate: string
 }
 
 @Schema()

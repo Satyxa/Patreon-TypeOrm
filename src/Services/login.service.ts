@@ -5,7 +5,7 @@ import {UnauthorizedException} from "@nestjs/common";
 import * as uuid from 'uuid'
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import {createToken} from "../Utils/authentication";
+import {createToken, getResultByToken} from "../Utils/authentication";
 
 export class LoginService {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
@@ -18,8 +18,8 @@ export class LoginService {
             if(isValidPassword) {
                 let deviceName = headers["user-agent"]
                 const deviceId = uuid.v4()
-                const token = await createToken(foundUser.id, deviceId, ip,'10h')
-                const RefreshToken = await createToken(foundUser.id, deviceId,ip, '20h')
+                const token = await createToken(foundUser.id, deviceId, ip,'10s')
+                const RefreshToken = await createToken(foundUser.id, deviceId,ip, '20s')
                 const {iat} = jwt.decode(token) as {iat: number}
                 const newDevice = {
                     ip,
@@ -28,10 +28,28 @@ export class LoginService {
                     lastActiveDate: new Date(iat * 1000).toISOString()
                 }
                 await this.UserModel.updateOne(filter, {$push: {sessions: newDevice}})
-                // res.cookie('refreshToken', RefreshToken, {httpOnly: true,secure: true})
                 return {accessToken: token, RefreshToken}
-            } else {
-                throw new UnauthorizedException()
             }
+            else throw new UnauthorizedException()
+    }
+    async getRefreshToken(refreshToken, ) {
+        if(!refreshToken) throw new UnauthorizedException()
+        if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
+        const tokenPayload: any = getResultByToken(refreshToken)
+        if(new Date(tokenPayload.exp * 1000) < new Date()) throw new UnauthorizedException()
+
+        const user: User | null = await this.UserModel.findOne({'id': tokenPayload.userId})
+        if (!user) throw new UnauthorizedException()
+
+        const AccessToken = await createToken(tokenPayload.userId, tokenPayload.deviceId, tokenPayload.ip,'10s')
+        const newRefreshToken = await createToken(tokenPayload.userId, tokenPayload.deviceId, tokenPayload.ip,'20s')
+
+        const {iat} = jwt.decode(newRefreshToken) as {iat: number}
+        const sessions = [...user.sessions]
+        const sessionForUpdate = sessions.find(s => s.deviceId === tokenPayload.deviceId)
+        if(!sessionForUpdate) throw new UnauthorizedException()
+        sessionForUpdate.lastActiveDate =  new Date(iat * 1000).toISOString()
+        await this.UserModel.updateOne({'id': tokenPayload.userId}, {$set: {sessions}})
+        return {accessToken: AccessToken, RefreshToken: newRefreshToken}
     }
 }

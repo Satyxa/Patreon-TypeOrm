@@ -17,20 +17,15 @@ export class AuthGuard implements CanActivate {
 
         const tokenPayload = await getResultByToken(token)
         if(!tokenPayload) throw new UnauthorizedException()
-        const {userId} = tokenPayload
+        const {userId, deviceId, iat} = tokenPayload
         const foundUser: User | null = await this.UserModel.findOne({id:userId}).lean()
         if(!foundUser) throw new UnauthorizedException()
-        else {
+        const existDevice = foundUser.sessions.some(device => device.deviceId === deviceId)
+        const correctActiveDate = foundUser.sessions.some(date => date.lastActiveDate === iat.toString())
+        if(existDevice || correctActiveDate){
             req.userId = foundUser.id
             return true
-        }
-        // const existDevice = foundUser.sessions.some(device => device.deviceId === deviceId)
-        // const correctActiveDate = foundUser.sessions.some(date => date.lastActiveDate === iat.toString())
-        // if(existDevice || correctActiveDate){
-        //     req.userId = foundUser.id
-        //     return true
-        // }
-        // else return false
+        } else return false
     }
 
 }

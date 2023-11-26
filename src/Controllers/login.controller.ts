@@ -1,4 +1,4 @@
-import {Body, Controller, Headers, HttpCode, Ip, Post, Res} from "@nestjs/common";
+import {Body, Controller, Headers, HttpCode, Ip, Post, Req, Res} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {User, UserDocument} from "../Mongoose/UserSchema";
 import {Model} from "mongoose";
@@ -15,6 +15,14 @@ export class LoginController {
                 @Ip() ip, @Headers() headers,
                 @Res({ passthrough: true }) res: any) {
         const {accessToken, RefreshToken} = await this.LoginService.login(signInPayload, ip, headers)
+        res.cookie('refreshToken', RefreshToken, { httpOnly: true, secure: true });
+        return {accessToken}
+    }
+    @Post()
+    @HttpCode(200)
+    async getRefreshToken(@Req() req: any,
+                          @Res({ passthrough: true }) res: any){
+        const {accessToken, RefreshToken} = await this.LoginService.getRefreshToken(req.cookies.refreshToken)
         res.cookie('refreshToken', RefreshToken, { httpOnly: true, secure: true });
         return {accessToken}
     }
