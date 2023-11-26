@@ -5,8 +5,8 @@ import {DevicesService} from "../Services/devices.service";
 export class DevicesController {
     constructor(private readonly DevicesService: DevicesService) {}
     @Get()
-    async getDevices(){
-        return this.DevicesService.getDevices()
+    async getDevices(@Req() req: any){
+        return this.DevicesService.getDevices(req.userId)
     }
     @Delete()
     async deleteDevices(@Req() req: any){

@@ -10,8 +10,8 @@ import jwt from "jsonwebtoken";
 export class DevicesService {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
 
-    async getDevices(){
-        const foundUser: User = await this.UserModel.findOne({id: req.userId})
+    async getDevices(userId){
+        const foundUser: User = await this.UserModel.findOne({id: userId})
         return foundUser!.sessions
     }
 
