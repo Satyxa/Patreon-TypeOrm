@@ -7,7 +7,7 @@ import {LoginService} from "../Services/login.service";
 import Cookies from "nodemailer/lib/fetch/cookies";
 import {DevicesService} from "../Services/devices.service";
 
-@Controller('/security/devices')
+@Controller('security/devices')
 export class DevicesController {
     constructor(private readonly DevicesService: DevicesService) {}
     @Get()
