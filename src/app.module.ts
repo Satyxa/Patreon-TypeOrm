@@ -1,6 +1,6 @@
 import {Module} from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import {AppController} from './app.controller';
+import {AppService} from './app.service';
 import {UserController} from "./Controllers/user.controller";
 import {UserService} from "./Services/user.service";
 import {MongooseModule} from "@nestjs/mongoose";
@@ -25,37 +25,47 @@ import {checkBlogId} from "./CustomValidate";
 import {DevicesController} from "./Controllers/devices.controller";
 import {DevicesService} from "./Services/devices.service";
 import {TokenBlackList, TokenBlackListSchema} from "./Mongoose/TokenBlackListSchema";
+import {ThrottlerModule} from "@nestjs/throttler";
+
 const mongoURI = process.env.MONGOURI || 'mongodb+srv://satyxa1919:m1Satyxa2on@clusterblog.jvi7su7.mongodb.net/patreon?retryWrites=true&w=majority'
+
 @Module({
-  imports: [
-      ConfigModule.forRoot(),
-    MongooseModule.forRoot(mongoURI),
-      MongooseModule.forFeature([{
-      name: User.name,
-      schema: UserSchema
-      }]),
-      MongooseModule.forFeature([{
-        name: Blog.name,
-        schema: BlogSchema
-      }]),
-      MongooseModule.forFeature([{
-      name: Post.name,
-      schema: PostSchema
-      }]),
-      MongooseModule.forFeature([{
-        name: Comment.name,
-        schema: CommentSchema
-      }]),
-      MongooseModule.forFeature([{
-        name: TokenBlackList.name,
-        schema: TokenBlackListSchema
-      }])
-  ],
-  controllers: [AppController, UserController, BlogController,
-    PostController, RegistrationController, LoginController, EmailController,
-  CommentsController, DevicesController],
-  providers: [AppService, UserService, BlogService, PostService,
-    RegistrationService, LoginService, EmailService,
-  CommentsService, checkBlogId, DevicesService],
+    imports: [
+        ConfigModule.forRoot(),
+        MongooseModule.forRoot(mongoURI),
+        MongooseModule.forFeature([{
+            name: User.name,
+            schema: UserSchema
+        }]),
+        MongooseModule.forFeature([{
+            name: Blog.name,
+            schema: BlogSchema
+        }]),
+        MongooseModule.forFeature([{
+            name: Post.name,
+            schema: PostSchema
+        }]),
+        MongooseModule.forFeature([{
+            name: Comment.name,
+            schema: CommentSchema
+        }]),
+        MongooseModule.forFeature([{
+            name: TokenBlackList.name,
+            schema: TokenBlackListSchema
+        }]),
+        ThrottlerModule.forRoot([
+            {
+                ttl: 60000,
+                limit: 100
+            }
+        ]),
+    ],
+    controllers: [AppController, UserController, BlogController,
+        PostController, RegistrationController, LoginController, EmailController,
+        CommentsController, DevicesController],
+    providers: [AppService, UserService, BlogService, PostService,
+        RegistrationService, LoginService, EmailService,
+        CommentsService, checkBlogId, DevicesService],
 })
-export class AppModule {}
+export class AppModule {
+}
