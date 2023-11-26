@@ -26,8 +26,7 @@ type queryPayload = {
 
 @Controller('posts')
 export class PostController {
-    constructor(private readonly PostService: PostService) {
-    }
+    constructor(private readonly PostService: PostService) {}
 
     @Get()
     async getAllPosts(@Query() payload: queryPayload,
