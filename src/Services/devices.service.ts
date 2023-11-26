@@ -9,7 +9,6 @@ export class DevicesService {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
 
     async getDevices(refreshToken){
-        console.log(66666666)
         if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
         const tokenPayload: any = getResultByToken(refreshToken)
         const foundUser: User | null = await this.UserModel.findOne({id: tokenPayload.userId})
@@ -17,11 +16,13 @@ export class DevicesService {
         return foundUser!.sessions
     }
 
-    async deleteDevice(deviceId, userId){
+    async deleteDevice(deviceId, refreshToken){
+        if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
+        const tokenPayload: any = getResultByToken(refreshToken)
         const user: User | null = await this.UserModel.findOne({'sessions.deviceId': deviceId})
         if(!user) throw new HttpException('NOT FOUND', 404)
-        if(userId !== user.id) throw new HttpException('FORBIDDEN', 403)
-        await this.UserModel.updateOne({id: userId}, {$pull: {sessions: {deviceId}}})
+        if(tokenPayload.userId !== user.id) throw new UnauthorizedException()
+        await this.UserModel.updateOne({id: tokenPayload.userId}, {$pull: {sessions: {deviceId}}})
     }
 
     async deleteDevices(refreshToken, userId){

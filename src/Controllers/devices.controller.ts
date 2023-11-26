@@ -8,7 +8,6 @@ export class DevicesController {
     constructor(private readonly DevicesService: DevicesService) {}
     @Get()
     async getDevices(@Req() req: any){
-        console.log(req.cookies.refreshToken)
         return this.DevicesService.getDevices(req.cookies.refreshToken)
     }
     @Delete()
@@ -18,6 +17,6 @@ export class DevicesController {
     @Delete(':deviceId')
     async deleteDevice(@Param('deviceId') deviceId: string,
                        @Req() req: any){
-        return this.DevicesService.deleteDevice(deviceId, req.userId)
+        return this.DevicesService.deleteDevice(deviceId, req.cookies.refreshToken)
     }
 }
