@@ -8,7 +8,6 @@ export class AuthGuard implements CanActivate {
     constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        console.log(12)
         const req = context.switchToHttp().getRequest()
         if(!req.headers.authorization) throw new UnauthorizedException()
         const token = req.headers.authorization.split(' ')[1]
