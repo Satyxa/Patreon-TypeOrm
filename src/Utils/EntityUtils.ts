@@ -36,7 +36,7 @@ export const EntityUtils = {
 
         // const {sessions, recoveryCode, ...ViewUser} = UserDB
 
-        return {ViewUser, User, AccountData, EmailConfirmation}
+        return {AccountData, EmailConfirmation, ViewUser}
     },
     GetPost: (post, userId): any => {
         return {
