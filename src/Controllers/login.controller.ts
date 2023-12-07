@@ -1,6 +1,7 @@
 import {Body, Controller, Headers, Delete, Get, HttpCode, Param, Post, UseGuards, Ip, Res, Req} from "@nestjs/common";
 import {BasicAuthGuard} from "../Middleware/AuthGuard";
 import {LoginService} from "../Services/login.service";
+import {Throttle} from "@nestjs/throttler";
 
 @Controller('auth')
 export class UserController {
@@ -10,6 +11,7 @@ export class UserController {
     async getMe(@Headers() headers) {
         return this.LoginService.getMe(headers.authorization)
     }
+    @Throttle({ default: { limit: 5, ttl: 10000 } })
     @Post('login')
     async login(@Body() signInPayload,
                 @Ip() ip,

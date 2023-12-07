@@ -6,6 +6,7 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {UserModule} from "./Moduls/user.module";
 import {UserController} from "./Controllers/user.controller";
 import {UserService} from "./Services/user.service";
+import {ThrottlerModule} from "@nestjs/throttler";
 
 
 @Module({
@@ -21,7 +22,11 @@ import {UserService} from "./Services/user.service";
             autoLoadEntities: false,
             synchronize: false
         }),
-        UserModule
+        UserModule,
+        ThrottlerModule.forRoot([{
+                ttl: 60000,
+                limit: 100
+            }]),
     ],
     controllers: [AppController, UserController],
     providers: [AppService, UserService],

@@ -18,13 +18,13 @@ export class EmailController {
     async confirmationCodeResending(@Body() payload) {
         await this.EmailService.confirmationCodeResending(payload)
     }
-
+    @Throttle({ default: { limit: 5, ttl: 10000 } })
     @Post('password-recovery')
     @HttpCode(204)
     async recoveryCode(@Body() payload: emailClass) {
         await this.EmailService.recoveryCode(payload.email)
     }
-
+    @Throttle({ default: { limit: 5, ttl: 10000 } })
     @Post('new-password')
     @HttpCode(204)
     async getNewPassword(@Body() payload: newPasswordPayloadClass) {
