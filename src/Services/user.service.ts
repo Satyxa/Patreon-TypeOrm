@@ -9,14 +9,14 @@ export class UserService {
     constructor(@InjectDataSource() protected dataSource: DataSource) {}
 
     async getAllUsers() {
-        return this.dataSource.query(`
-        SELECT * FROM "Users"
-        `)
+        return await this.dataSource.query(`
+        SELECT "userId" as "id", "createdAt", "username" as "login", "email" 
+        FROM "AccountData"`)
     }
     async getOneUser(id) {
-        return this.dataSource.query(`
-        SELECT * FROM "Users" where id = $1
-        `, [id])
+        return await this.dataSource.query(`
+        SELECT "userId" as "id", "createdAt", "username" as "login", "email" 
+        FROM "AccountData" where "userId" = $1`, [id])
     }
     async createUser(payload){
         const {login, email, password} = payload
