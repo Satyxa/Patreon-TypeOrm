@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import {BadRequestException, Controller, ValidationPipe} from "@nestjs/common";
+import {BadRequestException, ValidationPipe} from "@nestjs/common";
 import {HttpExceptionFilter} from "./Middleware/exception.filter";
 import {ErrorsType} from "./Types/types";
 import cookieParser from 'cookie-parser';
