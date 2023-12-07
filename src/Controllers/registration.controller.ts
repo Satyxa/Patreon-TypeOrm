@@ -8,7 +8,7 @@ import {DataSource} from "typeorm";
 @Controller('auth/registration')
 export class RegistrationController {
     constructor(private readonly UserService: UserService,
-                @InjectDataSource protected dataSource: DataSource) {
+                @InjectDataSource() protected dataSource: DataSource) {
     }
 
     @Throttle({default: {limit: 5, ttl: 10000,}})

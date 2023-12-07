@@ -5,7 +5,7 @@ import {EmailConfirmationType, SessionsType} from "../Types/types";
 import {getResultByToken} from "../Utils/authentication";
 
 export class DevicesService {
-    constructor(@InjectDataSource protected dataSource: DataSource) {}
+    constructor(@InjectDataSource() protected dataSource: DataSource) {}
 
     async getDevices(refreshToken){
         if(!getResultByToken(refreshToken)) throw new UnauthorizedException()

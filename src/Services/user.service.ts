@@ -20,14 +20,15 @@ export class UserService {
     }
     async createUser(payload){
         const {login, email, password} = payload
-        const {AccountData, EmailConfirmation, ViewUser} = EntityUtils.CreateUser(login, email, password)
+        const {AccountData, EmailConfirmation, ViewUser} = await EntityUtils.CreateUser(login, email, password)
 
         const {userId, username, passwordHash, createdAt} = AccountData
-        const {confirmationCode, expirationCode} = EmailConfirmation
+        const {confirmationCode, expirationDate} = EmailConfirmation
+        const recoveryCode = uuid.v4()
 
         await this.dataSource.query(
-            `INSERT INTO "Users" ("id", "recoveryCode") VALUES ($1, '')`,
-            [ViewUser.id])
+            `INSERT INTO "Users" ("id", "recoveryCode") VALUES ($1, $2)`,
+            [ViewUser.id, recoveryCode])
 
         await this.dataSource.query(
         `INSERT INTO "AccountData"
@@ -35,8 +36,8 @@ export class UserService {
         [userId, username, passwordHash, AccountData.email, createdAt])
 
         await this.dataSource.query(`
-        INSERT INTO "EmailConfirmation" ("userId", "confirmationCode", "expirationCode")
-        VALUE ($1, $2, $3)`, [userId, confirmationCode, expirationCode])
+        INSERT INTO "EmailConfirmation" ("userId", "confirmationCode", "expirationDate")
+        VALUES ($1, $2, $3)`, [userId, confirmationCode, expirationDate])
 
         const message = `<h1>Thank for your registration</h1>
     <p>To finish registration please follow the link below:

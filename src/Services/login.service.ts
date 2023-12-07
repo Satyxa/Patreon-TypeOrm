@@ -7,7 +7,7 @@ import {InjectDataSource} from "@nestjs/typeorm";
 import {DataSource} from "typeorm";
 
 export class LoginService {
-    constructor(@InjectDataSource protected dataSource: DataSource) {}
+    constructor(@InjectDataSource() protected dataSource: DataSource) {}
 
     async getMe(headAuth){
         if(!headAuth) throw new UnauthorizedException()

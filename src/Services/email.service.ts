@@ -6,7 +6,7 @@ import * as uuid from 'uuid'
 import {emailAdapter} from "../Utils/email-adapter";
 import bcrypt from "bcrypt";
 export class EmailService {
-    constructor(@InjectDataSource protected dataSource: DataSource) {}
+    constructor(@InjectDataSource() protected dataSource: DataSource) {}
 
     async confirmEmail(payload) {
         const {code} = payload
@@ -77,11 +77,11 @@ export class EmailService {
         const {newPassword, recoveryCode} = payload
         if(!recoveryCode) throw new BadRequestException(
             [{message: 'recoveryCode is required', field: "recoveryCode"}])
-
+        const newRecoveryCode = uuid.v4()
         const passwordSalt = await bcrypt.genSalt(10)
         const newPasswordHash = await bcrypt.hash(newPassword, passwordSalt)
         await this.dataSource.query(`
-        UPDATE "Users" SET passwordHash = $1 AND recoveryCode = '' where recoveryCode = $2`,
-            [newPasswordHash, recoveryCode])
+        UPDATE "Users" SET passwordHash = $1 AND recoveryCode = $3 where recoveryCode = $2`,
+            [newPasswordHash, recoveryCode, newRecoveryCode])
     }
 }
