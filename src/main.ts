@@ -20,7 +20,7 @@ async function Server() {
           message: e.constraints![zeroKey]
         })
       })
-      console.log('exceptionFactory')
+      console.log('exceptionFactor')
       throw new BadRequestException(errorsForRes)
   }}))
   app.useGlobalFilters(new HttpExceptionFilter())
