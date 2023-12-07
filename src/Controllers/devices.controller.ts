@@ -1,8 +1,6 @@
-import {Controller, Delete, Get, HttpCode, Param, Req, UseGuards} from "@nestjs/common";
+import {Controller, Delete, Get, HttpCode, Param, Req} from "@nestjs/common";
 import {DevicesService} from "../Services/devices.service";
-import {AuthGuard} from "../Middleware/AuthGuard";
 
-console.log(5555555555555)
 @Controller('security/devices')
 export class DevicesController {
     constructor(private readonly DevicesService: DevicesService) {}

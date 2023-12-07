@@ -1,6 +1,7 @@
 import {Body, Controller, HttpCode, Post} from "@nestjs/common";
 import {EmailService} from "../Services/email.service";
 import {Throttle} from "@nestjs/throttler";
+import {emailClass, newPasswordPayloadClass} from "../Types/classesTypes";
 
 @Controller('auth')
 export class EmailController {
@@ -16,5 +17,17 @@ export class EmailController {
     @HttpCode(204)
     async confirmationCodeResending(@Body() payload) {
         await this.EmailService.confirmationCodeResending(payload)
+    }
+
+    @Post('password-recovery')
+    @HttpCode(204)
+    async recoveryCode(@Body() payload: emailClass) {
+        await this.EmailService.recoveryCode(payload.email)
+    }
+
+    @Post('new-password')
+    @HttpCode(204)
+    async getNewPassword(@Body() payload: newPasswordPayloadClass) {
+        await this.EmailService.getNewPassword(payload)
     }
 }

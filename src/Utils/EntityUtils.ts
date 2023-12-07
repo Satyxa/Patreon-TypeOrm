@@ -1,6 +1,5 @@
 import * as uuid from "uuid";
 import {commentsT, newestLikesT, reactionsT, UserAccountDBType, userViewT} from "../Types/types";
-import {User} from "../Mongoose/UserSchema";
 import bcrypt from "bcrypt";
 
 export const EntityUtils = {
@@ -11,64 +10,65 @@ export const EntityUtils = {
         const expirationDate = new Date().toISOString()
         const salt = await bcrypt.genSalt(10)
         const hash = await bcrypt.hash(password, salt)
-        const UserDB: UserAccountDBType = {
+        const User = {
             id,
-            AccountData: {
-                username: login,
-                email,
-                passwordHash: hash,
-                createdAt
-            },
-            EmailConfirmation: {
-                confirmationCode,
-                expirationDate,
-                isConfirmed: false
-            },
-            sessions: [],
             recoveryCode: ''
         }
+        const AccountData = {
+            userId: id,
+            username: login,
+            email,
+            passwordHash: hash,
+            createdAt
+        }
+        const EmailConfirmation = {
+            userId: id,
+            confirmationCode,
+            expirationDate,
+            isConfirmed: false
+        }
         const ViewUser = {
-            id: UserDB.id,
-            email: UserDB.AccountData.email,
-            login: UserDB.AccountData.username,
-            createdAt: UserDB.AccountData.createdAt
+            id: User.id,
+            email: AccountData.email,
+            login: AccountData.username,
+            createdAt: AccountData.createdAt
         }
 
         // const {sessions, recoveryCode, ...ViewUser} = UserDB
 
-        return {UserDB, ViewUser}
+        return {ViewUser, User, AccountData, EmailConfirmation}
     },
     GetPost: (post, userId): any => {
-    return {
-        id: post.id,
-        title: post.title,
-        shortDescription: post.shortDescription,
-        content: post.content,
-        blogId: post.blogId,
-        blogName: post.blogName,
-        createdAt: post.createdAt,
-        extendedLikesInfo: {
-            likesCount: post.extendedLikesInfo.likesCount,
-            dislikesCount: post.extendedLikesInfo.dislikesCount,
-            myStatus: post.reactions.reduce((ac: string, r: reactionsT) => {
-                if (r.userId === userId) {
-                    return r.status
-                }
-                return ac
-            }, 'None'),
-            newestLikes: post.extendedLikesInfo.newestLikes.map((el: newestLikesT, i: number) => {
-                if(i < 3) {
-                    return {
-                        userId: el.userId,
-                        addedAt: el.addedAt,
-                        login: el.login
-                    };
-                }
-                return
-            }).splice(0, 3)
+        return {
+            id: post.id,
+            title: post.title,
+            shortDescription: post.shortDescription,
+            content: post.content,
+            blogId: post.blogId,
+            blogName: post.blogName,
+            createdAt: post.createdAt,
+            extendedLikesInfo: {
+                likesCount: post.extendedLikesInfo.likesCount,
+                dislikesCount: post.extendedLikesInfo.dislikesCount,
+                myStatus: post.reactions.reduce((ac: string, r: reactionsT) => {
+                    if (r.userId === userId) {
+                        return r.status
+                    }
+                    return ac
+                }, 'None'),
+                newestLikes: post.extendedLikesInfo.newestLikes.map((el: newestLikesT, i: number) => {
+                    if (i < 3) {
+                        return {
+                            userId: el.userId,
+                            addedAt: el.addedAt,
+                            login: el.login
+                        };
+                    }
+                    return
+                }).splice(0, 3)
+            }
         }
-    }
-},
+    },
     CreatePost: (title: string, shortDescription: string,
                  content: string, blogId: string, blogName: string) => {
         return {
@@ -88,7 +88,7 @@ export const EntityUtils = {
                 newestLikes: []
             }
         }
-},
+    },
     createViewComment: (comment: commentsT, userId: string) => {
         return {
             id: comment.id,

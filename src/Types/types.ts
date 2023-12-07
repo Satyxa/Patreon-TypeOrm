@@ -1,7 +1,6 @@
 import * as uuid from "uuid";
 
-
-export type userT = {
+export type userT33 = {
     id: string
     email: string
     login: string
@@ -9,13 +8,28 @@ export type userT = {
     passwordSalt: string
     createdAt: string
 }
+export type userT = {
+    id: string
+    email: string
+    login: string
+    password: string
+    createdAt: string
+    sessions: SessionsType[]
+}
 
 export type errorField = {
     field: string
     message: string
 }
 
+export interface UserSQL {
+    id: string
+    recoveryCode: string
+}
+
+
 export type AccountDataType = {
+    userId: string
     username: string
     email: string
     passwordHash: string
@@ -23,6 +37,7 @@ export type AccountDataType = {
 }
 
 export type EmailConfirmationType = {
+    userId: string
     confirmationCode: string
     expirationDate: string
     isConfirmed: boolean

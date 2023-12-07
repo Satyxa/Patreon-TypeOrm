@@ -1,38 +1,29 @@
-import {Body, Controller, Get, Headers, HttpCode, Ip, Post, Req, Res} from "@nestjs/common";
-import {InjectModel} from "@nestjs/mongoose";
-import {User, UserDocument} from "../Mongoose/UserSchema";
-import {Model} from "mongoose";
-import {createUserPayloadClass} from "../Types/classesTypes";
+import {Body, Controller, Headers, Delete, Get, HttpCode, Param, Post, UseGuards, Ip, Res, Req} from "@nestjs/common";
+import {BasicAuthGuard} from "../Middleware/AuthGuard";
 import {LoginService} from "../Services/login.service";
-import Cookies from "nodemailer/lib/fetch/cookies";
-import {Throttle} from "@nestjs/throttler";
 
 @Controller('auth')
-export class LoginController {
+export class UserController {
     constructor(private readonly LoginService: LoginService) {}
-
+    @UseGuards(BasicAuthGuard)
     @Get('me')
-    async getMe(@Headers() headers){
+    async getMe(@Headers() headers) {
         return this.LoginService.getMe(headers.authorization)
     }
-
-    @Throttle({ default: { limit: 5, ttl: 10000 } })
     @Post('login')
-    @HttpCode(200)
     async login(@Body() signInPayload,
-                @Ip() ip, @Headers() headers,
-                @Res({ passthrough: true }) res: any) {
+                @Ip() ip,
+                @Headers() headers,
+                @Res({ passthrough: true }) res: any){
         const {accessToken, RefreshToken} = await this.LoginService.login(signInPayload, ip, headers)
         res.cookie('refreshToken', RefreshToken, { httpOnly: true, secure: true });
         return {accessToken}
     }
-
     @Post('logout')
     @HttpCode(204)
     async logout(@Req() req: any){
         return this.LoginService.logout(req.cookies.refreshToken)
     }
-
     @Post('refresh-token')
     @HttpCode(200)
     async getRefreshToken(@Req() req: any,

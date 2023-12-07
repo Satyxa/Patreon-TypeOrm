@@ -1,5 +1,4 @@
 import {
-    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -7,14 +6,10 @@ import {
     HttpCode,
     Param,
     Post,
-    Query,
-    UseGuards
+    Query, UseGuards,
 } from '@nestjs/common';
 import { UserService } from '../Services/user.service';
-import {createUserPayloadType, UserAccountDBType, userViewT} from "../Types/types";
-import {User} from "../Mongoose/UserSchema";
-import {createUserPayloadClass} from "../Types/classesTypes";
-import {AuthGuard, BasicAuthGuard} from "../Middleware/AuthGuard";
+import {BasicAuthGuard} from "../Middleware/AuthGuard";
 
 export type queryPayload = {
     pageNumber: number,
@@ -26,30 +21,28 @@ export type queryPayload = {
     sortDirection: string
 }
 
-@Controller('users')
+@Controller('sa/users')
 export class UserController {
     constructor(private readonly UserService: UserService) {}
-
+    @UseGuards(BasicAuthGuard)
     @Get()
-    async getAllUsers(@Query() payload: queryPayload) {
-        return await this.UserService.getAllUsers(payload);
+    async getAllUsers() {
+        return this.UserService.getAllUsers()
     }
+    @UseGuards(BasicAuthGuard)
     @Get(':id')
-    async getOneUser(@Param('id') id: string): Promise<User | null> {
-        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
+    async getOneUser(@Param('id') id: string){
         return await this.UserService.getOneUser(id)
     }
     @UseGuards(BasicAuthGuard)
     @Post()
-    async createUser(@Body() createUserPayload: createUserPayloadClass) {
-        const {login, email, password} = createUserPayload
-        return await this.UserService.createUser(login, email, password)
+    async createUser(@Body() createUserPayload) {
+        return await this.UserService.createUser(createUserPayload)
     }
     @UseGuards(BasicAuthGuard)
     @Delete(':id')
     @HttpCode(204)
     async deleteUser(@Param('id') id: string){
-        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.UserService.deleteUser(id)
     }
 }

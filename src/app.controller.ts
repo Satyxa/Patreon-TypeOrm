@@ -1,16 +1,12 @@
 import {Controller, Delete, Get, HttpCode} from '@nestjs/common';
 import { AppService } from './app.service';
 import { UserService } from "./Services/user.service";
-import { PostService } from "./Services/post.service";
-import { BlogService } from "./Services/blog.service";
 
 @Controller()
 export class AppController {
   constructor(
       private readonly appService: AppService,
       private readonly UserService: UserService,
-      private readonly PostService: PostService,
-      private readonly BlogService: BlogService,
   ) {}
 
   @Get()
@@ -18,12 +14,4 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Delete('/testing/all-data')
-  @HttpCode(204)
-  async deleteAll() {
-    await this.UserService.deleteAllUsers()
-    await this.PostService.deleteAllPosts()
-    await this.BlogService.deleteAllBlogs()
-    return
-  }
 }

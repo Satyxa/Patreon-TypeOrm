@@ -1,60 +1,55 @@
 import {HttpException, Injectable} from '@nestjs/common';
-import {UserAccountDBType, userT, userViewT} from "../Types/types";
+import {DataSource} from "typeorm";
+import {InjectDataSource} from "@nestjs/typeorm";
 import * as uuid from 'uuid'
-import add from 'date-fns/add'
-import bcrypt from 'bcrypt'
-import {InjectModel} from "@nestjs/mongoose";
-import {User, UserDocument} from "../Mongoose/UserSchema";
-import {FilterQuery, Model} from "mongoose";
-import {usersPS} from "../Utils/PaginationAndSort";
 import {EntityUtils} from "../Utils/EntityUtils";
+import {emailAdapter} from "../Utils/email-adapter";
 @Injectable()
 export class UserService {
-    constructor(@InjectModel(User.name) private UserModel: Model<UserDocument>) {}
-    deleteAllUsers(): any {
-        return this.UserModel.deleteMany({})
+    constructor(@InjectDataSource() protected dataSource: DataSource) {}
+
+    async getAllUsers() {
+        return this.dataSource.query(`
+        SELECT * FROM "Users"
+        `)
     }
-
-    async getAllUsers(payload) {
-
-        const {users, pagesCount, pageNumber, pageSize, totalCount} = await usersPS(this.UserModel, payload)
-
-        const viewUsers = users.map(user => {
-            return {
-                id: user.id,
-                email: user.AccountData.email,
-                login: user.AccountData.username,
-                createdAt: user.AccountData.createdAt
-            }
-        })
-        return ({
-            pagesCount, page: pageNumber, pageSize,
-            totalCount, items: viewUsers})
+    async getOneUser(id) {
+        return this.dataSource.query(`
+        SELECT * FROM "Users" where id = $1
+        `, [id])
     }
-    async getOneUser(id): Promise<User | null> {
-        const user = await this.UserModel.findOne({id})
-        if(!user) throw new HttpException('Not Found', 404)
-        const projection = {
-            _id:0,
-            'AccountData._id': 0,
-            'EmailConfirmation._id': 0,
-            passwordHash: 0,
-            recoveryCode: 0,
-            __v: 0,
-            sessions: 0 }
-        return this.UserModel.findOne({id}, projection);
-    }
-    async createUser(login: string, email: string, password: string){
-        const {UserDB, ViewUser} = await EntityUtils.CreateUser(login, email, password)
+    async createUser(payload){
+        const {login, email, password} = payload
+        const {AccountData, EmailConfirmation, ViewUser} = EntityUtils.CreateUser(login, email, password)
 
-        const createdUser = new this.UserModel(UserDB)
-        await createdUser.save()
+        const {userId, username, passwordHash, createdAt} = AccountData
+        const {confirmationCode, expirationCode} = EmailConfirmation
+
+        await this.dataSource.query(
+            `INSERT INTO "Users" ("id", "recoveryCode") VALUES ($1, '')`,
+            [ViewUser.id])
+
+        await this.dataSource.query(
+        `INSERT INTO "AccountData"
+        ("userId", "username", "passwordHash", "email", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
+        [userId, username, passwordHash, AccountData.email, createdAt])
+
+        await this.dataSource.query(`
+        INSERT INTO "EmailConfirmation" ("userId", "confirmationCode", "expirationCode")
+        VALUE ($1, $2, $3)`, [userId, confirmationCode, expirationCode])
+
+        const message = `<h1>Thank for your registration</h1>
+    <p>To finish registration please follow the link below:
+        <a href=https://somesite.com/confirm-email?code=${confirmationCode}'>complete registration</a>
+    </p>`
+        await emailAdapter.sendEmail(email, 'Confirm your email', message)
 
         return ViewUser
     }
     async deleteUser(id){
-        const user = await this.UserModel.findOne({id})
-        if(!user) throw new HttpException('Not Found', 404)
-        await this.UserModel.findOneAndDelete({id})
+        return this.dataSource.query(`
+        DELETE FROM "Users"
+        where id = $1
+        `, [id])
     }
 }

@@ -1,26 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import {BadRequestException, Controller, Delete, HttpCode, ValidationPipe} from "@nestjs/common";
-import { UserService } from "./Services/user.service";
+import {BadRequestException, Controller, ValidationPipe} from "@nestjs/common";
 import {HttpExceptionFilter} from "./Middleware/exception.filter";
 import {ErrorsType} from "./Types/types";
-import {BlogService} from "./Services/blog.service";
-import {PostService} from "./Services/post.service";
 import cookieParser from 'cookie-parser';
 import {useContainer} from "class-validator";
-@Controller('/delete-all')
-class deleteAll {
-  constructor(private readonly UserService: UserService,
-              private readonly BlogService: BlogService,
-              private readonly PostService: PostService) {}
-  @Delete()
-  @HttpCode(204)
-  async deleteAll() {
-    await this.UserService.deleteAllUsers();
-    await this.PostService.deleteAllPosts();
-    return this.BlogService.deleteAllBlogs()
-  }
-}
 
 async function Server() {
   const app = await NestFactory.create(AppModule);
@@ -40,6 +24,6 @@ async function Server() {
       throw new BadRequestException(errorsForRes)
   }}))
   app.useGlobalFilters(new HttpExceptionFilter())
-  await app.listen(1666);
+  await app.listen(1667);
 }
 Server();

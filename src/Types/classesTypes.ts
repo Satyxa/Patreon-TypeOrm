@@ -2,7 +2,7 @@ import {
     Equals,
     IsEmail,
     IsIn,
-    isIn,
+    isIn, isNotEmpty,
     IsNotEmpty,
     isString,
     Length,
@@ -11,7 +11,6 @@ import {
     ValidateIf
 } from "class-validator";
 import {Transform} from "class-transformer";
-import {checkBlogId} from "../CustomValidate";
 import {Optional} from "@nestjs/common";
 
 export class createUserPayloadClass {
@@ -44,21 +43,21 @@ export class createBlogPayloadClass {
     websiteUrl: string
 }
 
-export class createdPostPayloadClass {
-    @Transform(param => param.value.trim())
-    @Length(1, 30)
-    title: string
-    @Transform(param => param.value.trim())
-    @Length(1, 100)
-    shortDescription: string
-    @Transform(param => param.value.trim())
-    @Length(1, 1000)
-    content: string
-    @Validate(checkBlogId, {
-        message: 'Title is too short or long!',
-    })
-    blogId?: string
-}
+// export class createdPostPayloadClass {
+//     @Transform(param => param.value.trim())
+//     @Length(1, 30)
+//     title: string
+//     @Transform(param => param.value.trim())
+//     @Length(1, 100)
+//     shortDescription: string
+//     @Transform(param => param.value.trim())
+//     @Length(1, 1000)
+//     content: string
+//     @Validate(checkBlogId, {
+//         message: 'Title is too short or long!',
+//     })
+//     blogId?: string
+// }
 
 export class createdPostForBlogPayloadClass {
     @Transform(param => param.value.trim())
@@ -84,4 +83,12 @@ export class CommentContentClass {
     @Transform(param => param.value.trim())
     @Length(20, 300)
     content: string
+}
+
+export class newPasswordPayloadClass {
+    @Transform(param => param.value.trim())
+    @Length(6, 20)
+    newPassword: string
+    @IsNotEmpty()
+    recoveryCode: string
 }
