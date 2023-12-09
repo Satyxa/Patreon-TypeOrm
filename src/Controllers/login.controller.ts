@@ -4,7 +4,7 @@ import {LoginService} from "../Services/login.service";
 import {Throttle} from "@nestjs/throttler";
 
 @Controller('auth')
-export class UserController {
+export class LoginController {
     constructor(private readonly LoginService: LoginService) {}
     @UseGuards(BasicAuthGuard)
     @Get('me')
@@ -17,6 +17,7 @@ export class UserController {
                 @Ip() ip,
                 @Headers() headers,
                 @Res({ passthrough: true }) res: any){
+        console.log('wjenfwjefjwefn')
         const {accessToken, RefreshToken} = await this.LoginService.login(signInPayload, ip, headers)
         res.cookie('refreshToken', RefreshToken, { httpOnly: true, secure: true });
         return {accessToken}

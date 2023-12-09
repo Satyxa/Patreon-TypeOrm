@@ -5,6 +5,7 @@ import {createToken, getResultByToken} from "../Utils/authentication";
 import {userT} from "../Types/types";
 import {InjectDataSource} from "@nestjs/typeorm";
 import {DataSource} from "typeorm";
+import bcrypt from "bcrypt";
 
 export class LoginService {
     constructor(@InjectDataSource() protected dataSource: DataSource) {}
@@ -30,11 +31,18 @@ export class LoginService {
 
     async login(payload, ip, headers){
         const {loginOrEmail, password} = payload
-        const foundUser: userT = await this.dataSource.query(`
-        SELECT * FROM "Users" where login = $1 OR email = $1
+        const foundUserQuery: userT = await this.dataSource.query(`
+        SELECT * 
+        FROM "Users" u 
+        LEFT JOIN "AccountData" a ON u.id = a."userId" 
+        where a."username" = $1 OR a."email" = $1
         `, [loginOrEmail])
+        const foundUser = foundUserQuery[0]
         if(!foundUser) throw new UnauthorizedException()
-        const isValidPassword = password === foundUser.password
+        console.log(1)
+        console.log(foundUser.passwordHash, password)
+        const isValidPassword = await bcrypt.compare(password, foundUser.passwordHash,)
+        console.log(isValidPassword)
         if(isValidPassword) {
             let deviceName = headers["user-agent"]
             const deviceId = uuid.v4()
@@ -47,13 +55,17 @@ export class LoginService {
                 deviceId,
                 lastActiveDate: new Date(iat * 1000).toISOString()
             }
-            const newSessions = foundUser.sessions.push(newDevice)
+            const{title, lastActiveDate} = newDevice
             await this.dataSource.query(`
-            UPDATE "Users" SET sessions = $2 where login = $1 OR email = $1
-            `, [loginOrEmail, newSessions])
+            INSERT INTO "Sessions" ("userId", "deviceId", "ip", "lastActiveDate", "title")
+            VALUES ($1, $2, $3, $4, $5)
+            `, [foundUser.id, deviceId, ip, lastActiveDate, title])
             return {accessToken: token, RefreshToken}
         }
-        else throw new UnauthorizedException()
+        else {
+            console.log(2)
+            throw new UnauthorizedException()
+        }
     }
 
     async logout(refreshToken){
