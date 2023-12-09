@@ -21,13 +21,14 @@ import {EmailService} from "./Services/email.service";
         ConfigModule.forRoot(),
         TypeOrmModule.forRoot({
             type: "postgres",
-            host: 'localhost',
+            host: 'ep-old-bush-02389267.us-east-2.aws.neon.tech',
             port: 5432,
-            username: 'satyxa',
-            password: 'satyxa',
+            username: 'Satyxa',
+            password: 'l8tvZFa5QNuV',
             database: 'Patreon',
             autoLoadEntities: false,
-            synchronize: false
+            synchronize: false,
+            ssl: true
         }),
         UserModule,
         ThrottlerModule.forRoot([{
