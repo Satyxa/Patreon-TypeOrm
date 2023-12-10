@@ -2,7 +2,7 @@ import {HttpException, UnauthorizedException} from "@nestjs/common";
 import * as uuid from 'uuid'
 import jwt from "jsonwebtoken";
 import {createToken, getResultByToken} from "../Utils/authentication";
-import {userT} from "../Types/types";
+import {UserSQL, userT} from "../Types/types";
 import {InjectDataSource} from "@nestjs/typeorm";
 import {DataSource} from "typeorm";
 import bcrypt from "bcrypt";
@@ -32,17 +32,14 @@ export class LoginService {
     async login(payload, ip, headers){
         const {loginOrEmail, password} = payload
         const foundUserQuery: userT = await this.dataSource.query(`
-        SELECT * 
-        FROM "Users" u 
-        LEFT JOIN "AccountData" a ON u.id = a."userId" 
-        where a."username" = $1 OR a."email" = $1
+        SELECT * FROM "Users"
+        where username = $1 OR email = $1
         `, [loginOrEmail])
         const foundUser = foundUserQuery[0]
+
         if(!foundUser) throw new UnauthorizedException()
-        console.log(1)
-        console.log(foundUser.passwordHash, password)
-        const isValidPassword = await bcrypt.compare(password, foundUser.passwordHash,)
-        console.log(isValidPassword)
+        const isValidPassword = await bcrypt.compare(password, foundUser.passwordHash)
+
         if(isValidPassword) {
             let deviceName = headers["user-agent"]
             const deviceId = uuid.v4()
@@ -62,10 +59,8 @@ export class LoginService {
             `, [foundUser.id, deviceId, ip, lastActiveDate, title])
             return {accessToken: token, RefreshToken}
         }
-        else {
-            console.log(2)
-            throw new UnauthorizedException()
-        }
+        else throw new UnauthorizedException()
+
     }
 
     async logout(refreshToken){
@@ -76,15 +71,10 @@ export class LoginService {
 
         const {userId, deviceId} = tokenPayload
 
-        const user = await this.dataSource.query(`
-        SELECT * FROM "Users" where id = $1
-        `, [userId])
-
-        const userSessions = user.sessions.map(device => device.deviceId !== deviceId ?? device)
-
         await this.dataSource.query(`
-        UPDATE "Users" SET sessions = $1 where id = userId
-        `, [userSessions])
+        DELETE FROM "Sessions" 
+        where id = $1 AND deviceId = $2`,
+            [userId, deviceId])
 
     }
 
@@ -95,7 +85,7 @@ export class LoginService {
         const tokenPayload: any = getResultByToken(refreshToken)
         if(new Date(tokenPayload.exp * 1000) < new Date()) throw new UnauthorizedException()
 
-        const user: userT | null = await this.dataSource.query(
+        const user: UserSQL | null = await this.dataSource.query(
             `SELECT * FROM "Users" where id = $1`,
             [tokenPayload.userId])
         if (!user) throw new UnauthorizedException()
@@ -104,13 +94,16 @@ export class LoginService {
         const newRefreshToken = await createToken(tokenPayload.userId, tokenPayload.deviceId, tokenPayload.ip,'20s')
 
         const {iat} = jwt.decode(newRefreshToken) as {iat: number}
-        const sessions = [...user.sessions]
+        const sessions = await this.dataSource.query(
+        `SELECT * FROM "Users" where id = $1`,
+        [tokenPayload.userId])
         const sessionForUpdate = sessions.find(s => s.deviceId === tokenPayload.deviceId)
         if(!sessionForUpdate) throw new UnauthorizedException()
-        sessionForUpdate.lastActiveDate =  new Date(iat * 1000).toISOString()
+
+        const newLastDate = sessionForUpdate.lastActiveDate = new Date(iat * 1000).toISOString()
         await this.dataSource.query(
-            `UPDATE "Users" SET sessions = $1 where id = $2`,
-            [sessions, tokenPayload.userId])
+            `UPDATE "Sessions" SET lastActiveDate = $1 where id = $2`,
+            [newLastDate, tokenPayload.userId])
 
         return {accessToken: AccessToken, RefreshToken: newRefreshToken}
     }

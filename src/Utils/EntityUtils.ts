@@ -34,8 +34,6 @@ export const EntityUtils = {
             createdAt: AccountData.createdAt
         }
 
-        // const {sessions, recoveryCode, ...ViewUser} = UserDB
-
         return {AccountData, EmailConfirmation, ViewUser}
     },
     GetPost: (post, userId): any => {

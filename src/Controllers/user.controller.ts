@@ -24,10 +24,16 @@ export type queryPayload = {
 @Controller('sa/users')
 export class UserController {
     constructor(private readonly UserService: UserService) {}
+
+    @Delete()
+    async deleteAll() {
+        return this.UserService.deleteAll()
+    }
+
     @UseGuards(BasicAuthGuard)
     @Get()
-    async getAllUsers() {
-        return this.UserService.getAllUsers()
+    async getAllUsers(@Query() payload: queryPayload) {
+        return this.UserService.getAllUsers(payload)
     }
     @UseGuards(BasicAuthGuard)
     @Get(':id')

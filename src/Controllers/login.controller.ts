@@ -17,7 +17,6 @@ export class LoginController {
                 @Ip() ip,
                 @Headers() headers,
                 @Res({ passthrough: true }) res: any){
-        console.log('wjenfwjefjwefn')
         const {accessToken, RefreshToken} = await this.LoginService.login(signInPayload, ip, headers)
         res.cookie('refreshToken', RefreshToken, { httpOnly: true, secure: true });
         return {accessToken}

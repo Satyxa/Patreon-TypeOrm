@@ -4,6 +4,12 @@ import {DevicesService} from "../Services/devices.service";
 @Controller('security/devices')
 export class DevicesController {
     constructor(private readonly DevicesService: DevicesService) {}
+
+    @Delete('testing/all-data')
+    async deleteAll(){
+        return this.DevicesService.deleteAll()
+    }
+
     @Get()
     async getDevices(@Req() req: any) {
         return await this.DevicesService.getDevices(req.cookies.refreshToken)

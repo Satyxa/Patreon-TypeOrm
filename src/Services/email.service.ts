@@ -1,7 +1,7 @@
 import {InjectDataSource} from "@nestjs/typeorm";
 import {DataSource} from "typeorm";
 import {BadRequestException} from "@nestjs/common";
-import {EmailConfirmationType} from "../Types/types";
+import {EmailConfirmationType, UserSQL} from "../Types/types";
 import * as uuid from 'uuid'
 import {emailAdapter} from "../Utils/email-adapter";
 import bcrypt from "bcrypt";
@@ -11,14 +11,16 @@ export class EmailService {
     async confirmEmail(payload) {
         const {code} = payload
         if(!code) throw new BadRequestException([{message: 'code is required', field: "code"}])
-        const emailInfo: EmailConfirmationType = await this.dataSource.query(
-            `SELECT * FROM "EmailConfirmation" where confirmationCode = $1`, [code])
+        const user: UserSQL = await this.dataSource.query(
+        `SELECT * FROM "Users" u where u."confirmationCode" = $1`,
+            [code])
 
-        if(!emailInfo) throw new BadRequestException([{message: 'invalid code', field: "code"}])
-        if (emailInfo.isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "code" }])
+        if(!user) throw new BadRequestException([{message: 'invalid code', field: "code"}])
+        if (user.isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "code" }])
 
         await this.dataSource.query(
-            `UPDATE "EmailConfirmation" SET isConfirmed = true where confirmationCode = $1`,
+            `UPDATE "Users"
+            SET "isConfirmed" = true where "confirmationCode" = $1`,
             [code])
 
     }
@@ -26,25 +28,19 @@ export class EmailService {
         const {email} = payload
         if(!email) throw new BadRequestException([{message: 'email is required', field: "email"}])
 
-        const AccountData = await this.dataSource.query(`
-        SELECT * FROM "AccountData" where email = $1
+        const user = await this.dataSource.query(`
+        SELECT * FROM "Users" where email = $1
         `, [email])
-        if(!AccountData )throw new BadRequestException(
+
+        if(!user.length)throw new BadRequestException(
             [{message: 'user with that email does not exist', field: "email"}])
 
-        const {userId} = AccountData
-
-        const EmailConfirmation: EmailConfirmationType = await this.dataSource.query(`
-        SELECT * FROM "EmailConfirmation" where userId = $1
-        `, [userId])
-
-
-        if(EmailConfirmation.isConfirmed) throw new BadRequestException(
+        if(user[0].isConfirmed) throw new BadRequestException(
             [{ message: 'already confirmed', field: "email" }])
 
         const newCode = uuid.v4()
         await this.dataSource.query(`
-        UPDATE "EmailConfirmation" SET confirmationCode = $1 where email = $2
+        UPDATE "Users" SET "confirmationCode" = $1 where email = $2
         `, [newCode, email])
 
         const message = `<h1>Thank for your registration</h1>
@@ -55,15 +51,19 @@ export class EmailService {
     }
 
     async recoveryCode(email) {
-        const AccountData = await this.dataSource.query(`SELECT * FROM "AccountData" where email = $1`,
-            [email])
+        const AccountData = await this.dataSource.query(`
+        SELECT * FROM "Users" where email = $1`, [email])
+
         if(!AccountData )throw new BadRequestException(
             [{message: 'user with that email does not exist', field: "email"}])
         else {
             const recoveryCode = uuid.v4()
             const {userId} = AccountData
-            await this.dataSource.query(`UPDATE "Users" SET recoveryCode = $2 where id = $1`,
-                [userId, recoveryCode])
+
+            await this.dataSource.query(
+        `UPDATE "Users" SET "recoveryCode" = $2 where id = $1`,
+           [userId, recoveryCode])
+
             const subject = 'Password Recovery'
             const message = `<h1>Password recovery</h1>
        <p>To finish password recovery please follow the link below:
@@ -77,11 +77,13 @@ export class EmailService {
         const {newPassword, recoveryCode} = payload
         if(!recoveryCode) throw new BadRequestException(
             [{message: 'recoveryCode is required', field: "recoveryCode"}])
+
         const newRecoveryCode = uuid.v4()
         const passwordSalt = await bcrypt.genSalt(10)
         const newPasswordHash = await bcrypt.hash(newPassword, passwordSalt)
+
         await this.dataSource.query(`
-        UPDATE "Users" SET passwordHash = $1 AND recoveryCode = $3 where recoveryCode = $2`,
-            [newPasswordHash, recoveryCode, newRecoveryCode])
+        UPDATE "Users" SET "passwordHash" = $1, "recoveryCode" = $2 where "recoveryCode" = $3`,
+            [newPasswordHash, newRecoveryCode, recoveryCode])
     }
 }

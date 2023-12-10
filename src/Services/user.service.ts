@@ -1,43 +1,66 @@
-import {HttpException, Injectable} from '@nestjs/common';
+import {BadRequestException, HttpException, Injectable} from '@nestjs/common';
 import {DataSource} from "typeorm";
 import {InjectDataSource} from "@nestjs/typeorm";
 import * as uuid from 'uuid'
 import {EntityUtils} from "../Utils/EntityUtils";
 import {emailAdapter} from "../Utils/email-adapter";
+import {Users} from "../Schemes/UserSchema";
+import {usersPS} from "../Utils/PaginationAndSort";
+
 @Injectable()
 export class UserService {
-    constructor(@InjectDataSource() protected dataSource: DataSource) {}
-
-    async getAllUsers() {
-        return await this.dataSource.query(`
-        SELECT "userId" as "id", "createdAt", "username" as "login", "email" 
-        FROM "AccountData"`)
+    constructor(@InjectDataSource() protected dataSource: DataSource) {
     }
+
+    async deleteAll() {
+        return await this.dataSource.query(`
+        DELETE * FROM "Users"
+        `)
+    }
+
+    async getAllUsers(payload) {
+
+        const {users, pagesCount, pageNumber, pageSize, totalCount} = await usersPS(this.dataSource, payload)
+
+        return ({
+            pagesCount, page: pageNumber, pageSize,
+            totalCount, items: users})
+    }
+
     async getOneUser(id) {
         return await this.dataSource.query(`
-        SELECT "userId" as "id", "createdAt", "username" as "login", "email" 
-        FROM "AccountData" where "userId" = $1`, [id])
+        SELECT "id", "createdAt", "username" as "login", "email" 
+        FROM "Users" where id = $1`, [id])
     }
-    async createUser(payload){
+
+    async createUser(payload) {
         const {login, email, password} = payload
+
+        const userByLogin = await this.dataSource.query(`
+        SELECT * FROM "Users" where username = $1
+        `, [login])
+        const userByEmail = await this.dataSource.query(`
+        SELECT * FROM "Users" where email = $1
+        `, [email])
+
+        if (userByEmail.length || userByLogin.length) throw new BadRequestException([{
+            message: 'email or login already exist',
+            field: userByLogin ? 'login' : 'email'
+        }])
+
         const {AccountData, EmailConfirmation, ViewUser} = await EntityUtils.CreateUser(login, email, password)
 
-        const {userId, username, passwordHash, createdAt} = AccountData
+        const {username, passwordHash, createdAt} = AccountData
         const {confirmationCode, expirationDate} = EmailConfirmation
         const recoveryCode = uuid.v4()
 
-        await this.dataSource.query(
-            `INSERT INTO "Users" ("id", "recoveryCode") VALUES ($1, $2)`,
-            [ViewUser.id, recoveryCode])
 
         await this.dataSource.query(
-        `INSERT INTO "AccountData"
-        ("userId", "username", "passwordHash", "email", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
-        [userId, username, passwordHash, AccountData.email, createdAt])
-
-        await this.dataSource.query(`
-        INSERT INTO "EmailConfirmation" ("userId", "confirmationCode", "expirationDate")
-        VALUES ($1, $2, $3)`, [userId, confirmationCode, expirationDate])
+            `INSERT INTO "Users" ("id", "recoveryCode", "username", "passwordHash", "email", 
+                "createdAt", "confirmationCode", "expirationDate") 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [ViewUser.id, recoveryCode, username, passwordHash,
+                email, createdAt, confirmationCode, expirationDate])
 
         const message = `<h1>Thank for your registration</h1>
     <p>To finish registration please follow the link below:
@@ -47,7 +70,8 @@ export class UserService {
 
         return ViewUser
     }
-    async deleteUser(id){
+
+    async deleteUser(id) {
         return this.dataSource.query(`
         DELETE FROM "Users"
         where id = $1

@@ -25,6 +25,13 @@ export type errorField = {
 export interface UserSQL {
     id: string
     recoveryCode: string
+    username: string
+    email: string
+    passwordHash: string
+    createdAt: string
+    confirmationCode: string
+    expirationDate: string
+    isConfirmed: boolean
 }
 
 

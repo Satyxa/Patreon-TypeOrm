@@ -15,20 +15,6 @@ export class RegistrationController {
     @Post('registration')
     @HttpCode(204)
     async registration(@Body() createUserPayload: createUserPayloadClass) {
-
-        const userByLogin = await this.dataSource.query(`
-        SELECT * FROM "AccountData" where username = $1
-        `, [createUserPayload.login])
-        const userByEmail = await this.dataSource.query(`
-        SELECT * FROM "AccountData" where email = $1
-        `, [createUserPayload.email])
-
-        if (userByEmail.length || userByLogin.length) throw new BadRequestException([{
-            message: 'email or login already exist',
-            field: userByLogin ? 'login' : 'email'
-        }])
-
-        await this.UserService.createUser(createUserPayload)
-        return
+        return await this.UserService.createUser(createUserPayload)
     }
 }
