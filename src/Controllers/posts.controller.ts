@@ -13,6 +13,8 @@ import {
     Req,
     UseGuards
 } from '@nestjs/common';
+import {PostService} from "../Services/posts.service";
+import {BasicAuthGuard} from "../Middleware/AuthGuard";
 
 type queryPayload = {
     pageNumber: number,
@@ -23,32 +25,33 @@ type queryPayload = {
 
 @Controller('posts')
 export class PostController {
-    constructor() {}
+    constructor(private readonly PostService: PostService) {}
 
-    // @Get()
-    // async getAllPosts(@Query() payload: queryPayload,
-    //                   @Headers() headers) {
-    //     return await this.PostService.getAllPosts(payload, headers)
-    // }
-    //
-    // @Get(':id')
-    // async getOnePost(@Param('id') id: string,
-    //                  @Headers() headers) {
-    //     if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-    //     return await this.PostService.getOnePost(id, headers)
-    // }
+    @Get()
+    async getAllPosts(@Query() payload: queryPayload,
+                      @Headers() headers) {
+        return await this.PostService.getAllPosts(payload, headers)
+    }
+
+    @Get(':id')
+    async getOnePost(@Param('id') id: string,
+                     @Headers() headers) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
+        return await this.PostService.getOnePost(id, headers)
+    }
     // @UseGuards(BasicAuthGuard)
     // @Post()
     // async createPost(@Body() createdPostPayload: createdPostPayloadClass) {
     //     return await this.PostService.createPost(createdPostPayload)
     // }
-    // @UseGuards(BasicAuthGuard)
-    // @Delete(':id')
-    // @HttpCode(204)
-    // async deletePost(@Param('id') id: string) {
-    //     if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-    //     return await this.PostService.deletePost(id)
-    // }
+    @UseGuards(BasicAuthGuard)
+    @Delete(':id')
+    @HttpCode(204)
+    async deletePost(@Param('id') id: string) {
+        if(!id) throw new BadRequestException(
+            [{message: 'id is required', field: 'id'}])
+        return await this.PostService.deletePost(id)
+    }
     //
     // @UseGuards(BasicAuthGuard)
     // @Put(':id')
