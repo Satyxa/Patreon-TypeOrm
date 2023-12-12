@@ -11,7 +11,6 @@ export class RegistrationController {
                 @InjectDataSource() protected dataSource: DataSource) {
     }
 
-    @Throttle({default: {limit: 5, ttl: 10000,}})
     @Post('registration')
     @HttpCode(204)
     async registration(@Body() createUserPayload: createUserPayloadClass) {

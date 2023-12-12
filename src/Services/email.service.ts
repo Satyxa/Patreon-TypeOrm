@@ -11,12 +11,12 @@ export class EmailService {
     async confirmEmail(payload) {
         const {code} = payload
         if(!code) throw new BadRequestException([{message: 'code is required', field: "code"}])
-        const user: UserSQL = await this.dataSource.query(
+        const user: UserSQL[] = await this.dataSource.query(
         `SELECT * FROM "Users" u where u."confirmationCode" = $1`,
             [code])
 
-        if(!user) throw new BadRequestException([{message: 'invalid code', field: "code"}])
-        if (user.isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "code" }])
+        if(!user.length) throw new BadRequestException([{message: 'invalid code', field: "code"}])
+        if (user[0].isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "code" }])
 
         await this.dataSource.query(
             `UPDATE "Users"
@@ -28,7 +28,7 @@ export class EmailService {
         const {email} = payload
         if(!email) throw new BadRequestException([{message: 'email is required', field: "email"}])
 
-        const user = await this.dataSource.query(`
+        const user: UserSQL[] = await this.dataSource.query(`
         SELECT * FROM "Users" where email = $1
         `, [email])
 

@@ -32,5 +32,15 @@ export const EntityWithReactions = {
             }
         }
         return {viewComment, comment}
+    },
+
+    getPostsInfo: async (dataSource) => {
+        const reactions =
+            await dataSource.query(`SELECT * FROM "Reactions"`)
+
+        const newestLikes =
+            await dataSource.query(`SELECT * FROM "NewestLikes"`)
+
+        return {reactions, newestLikes}
     }
 }

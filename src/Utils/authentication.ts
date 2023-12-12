@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import {UnauthorizedException} from "@nestjs/common";
 
 const secretKey = 'gergergergerg'
 
@@ -7,7 +8,7 @@ export const getResultByToken = (refreshToken: string) : {userId: string, device
         return jwt.verify(refreshToken, secretKey) as {userId: string, deviceId: string, iat: number}
     } catch (err){
         console.log(err, `=> getResultByToken (file authentication)`)
-        return null
+        throw new UnauthorizedException()
     }
 }
 

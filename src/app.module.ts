@@ -5,7 +5,7 @@ import {ConfigModule} from '@nestjs/config'
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {UserController} from "./Controllers/user.controller";
 import {UserService} from "./Services/user.service";
-import {ThrottlerModule} from "@nestjs/throttler";
+import {ThrottlerGuard, ThrottlerModule} from "@nestjs/throttler";
 import {LoginController} from "./Controllers/login.controller";
 import {RegistrationController} from "./Controllers/registration.controller";
 import {EmailController} from "./Controllers/email.controller";
@@ -16,6 +16,7 @@ import {EmailService} from "./Services/email.service";
 import {Users} from "./Schemes/UserSchema";
 import {UsersModule} from "./Moduls/user.module";
 import {DataSource} from "typeorm";
+import {APP_GUARD} from "@nestjs/core";
 
 
 @Module({
@@ -42,7 +43,11 @@ import {DataSource} from "typeorm";
     ],
     controllers: [AppController, LoginController, RegistrationController,
         EmailController, DevicesController],
-    providers: [AppService, LoginService, EmailService, DevicesService, UserService],
+    providers: [{
+        provide: APP_GUARD,
+        useClass: ThrottlerGuard
+    },
+        AppService, LoginService, EmailService, DevicesService, UserService],
 })
 export class AppModule {
     constructor(private dataSource: DataSource) {}

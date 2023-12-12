@@ -9,7 +9,7 @@ export class DevicesService {
 
     async deleteAll(){
         return await this.dataSource.query(`
-        DELETE * FROM "Sessions"
+        DELETE FROM "Sessions"
         `)
     }
 
@@ -18,10 +18,24 @@ export class DevicesService {
         const tokenPayload: any = getResultByToken(refreshToken)
 
         const sessions: SessionsType[] = await this.dataSource.query(`
-        SELECT * FROM "Sessions" where "userId" = $1`, [tokenPayload.userId])
+        SELECT "ip", "deviceId", "title", "lastActiveDate" 
+        FROM "Sessions" 
+        where "userId" = $1`, [tokenPayload.userId])
 
         if(!sessions.length) throw new UnauthorizedException()
         return sessions
+    }
+
+    async deleteDevices(refreshToken) {
+        if (!getResultByToken(refreshToken)) throw new UnauthorizedException()
+        const tokenPayload = getResultByToken(refreshToken)
+        if (!tokenPayload) throw new UnauthorizedException()
+
+        const {deviceId} = tokenPayload
+        await this.dataSource.query(
+            `DELETE FROM "Sessions" 
+        where "userId" = $1 AND "deviceId" != $2`,
+            [tokenPayload.userId, deviceId])
     }
 
     async deleteDevice(deviceId, refreshToken){
@@ -38,17 +52,4 @@ export class DevicesService {
             `DELETE FROM "Sessions" where "deviceId" = $1`,
             [deviceId])
     }
-
-    async deleteDevices(refreshToken) {
-        if (!getResultByToken(refreshToken)) throw new UnauthorizedException()
-        const tokenPayload = getResultByToken(refreshToken)
-        if (!tokenPayload) throw new UnauthorizedException()
-
-        const {deviceId} = tokenPayload
-        await this.dataSource.query(
-            `DELETE FROM "Sessions" 
-        where "userId" = $1 AND "deviceId" != $2`,
-            [tokenPayload.userId, deviceId])
-    }
-
 }

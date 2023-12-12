@@ -101,9 +101,9 @@ export type postT = {
     blogId: string
     blogName: string
     createdAt: string
-    comments: commentsT[]
-    reactions: reactionsT[]
-    extendedLikesInfo: extendedLikesInfoT
+    likesCount: number
+    dislikesCount: number
+    myStatus: 'Like' | 'Dislike' | 'None'
 }
 
 export type extendedLikesInfoT = {
@@ -131,6 +131,7 @@ export type commentsT = {
 }
 
 export type reactionsT = {
+    postId: string
     userId: string,
     status: string,
     createdAt: string

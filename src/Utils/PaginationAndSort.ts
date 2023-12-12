@@ -1,15 +1,18 @@
 import {FilterQuery, SortOrder} from "mongoose";
-import {blogsT, commentsT, UserAccountDBType, userT} from "../Types/types";
+import {blogsT, commentsT, extendedLikesInfoT, newestLikesT, postT, UserAccountDBType, userT} from "../Types/types";
 
 export const getValuesPS = (payload) => {
     let {pageNumber, pageSize, sortBy, searchLoginTerm, searchEmailTerm, sortDirection, searchNameTerm} = payload
-
+    if(!searchLoginTerm && !searchEmailTerm){
+        searchEmailTerm = ''
+        searchLoginTerm = ''
+    }
     return {
         pageNumber: pageNumber ? +pageNumber : 1,
         pageSize: pageSize ? +pageSize : 10,
         sortBy: sortBy ?? 'createdAt',
-        searchLoginTerm: searchLoginTerm ?? '',
-        searchEmailTerm: searchEmailTerm ?? '',
+        searchLoginTerm: !searchLoginTerm ? !searchEmailTerm ? '' : '$#@' : searchLoginTerm,
+        searchEmailTerm: !searchEmailTerm ? !searchLoginTerm ? '' : '$#@' : searchEmailTerm,
         searchNameTerm: searchNameTerm ?? '',
         sortDirection: sortDirection ?? 'desc',
     }
@@ -18,19 +21,26 @@ export const getValuesPS = (payload) => {
 export const usersPS = async (dataSource, payload) => {
 
     let {pageNumber, pageSize, sortBy, searchLoginTerm,
-        searchEmailTerm, sortDirection
-        } = getValuesPS(payload)
+        searchEmailTerm, sortDirection} = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
 
+    const count = await dataSource.query(`
+    SELECT COUNT(*) 
+    FROM "Users" 
+    where (username ilike $1 OR email ilike $2)`,
+
+    ['%' + searchLoginTerm + '%', '%' + searchEmailTerm + '%'])
+    console.log(sortBy)
     const users = await dataSource.query(`
     SELECT "id", "createdAt", "username" as "login", "email" FROM "Users"
-    where (username ilike $1 OR email ilike $2)
+    where (username ilike $3 OR email ilike $4) 
     ORDER BY "${sortBy}" ${sortDirection}
-    LIMIT $3 OFFSET $4`,
-        ['%' + searchLoginTerm + '%', '%' + searchEmailTerm + '%', pageSize, offset])
+    LIMIT $1 OFFSET $2`,
 
-    const totalCount = users.length
+    [pageSize, offset, '%' + searchLoginTerm + '%', '%' + searchEmailTerm + '%'])
+
+    const totalCount = +count[0].count
     const pagesCount = Math.ceil(totalCount / pageSize)
 
     return {users, pagesCount, pageNumber, pageSize, totalCount}
@@ -51,17 +61,44 @@ export const blogsPS = async (BlogModel, payload) => {
     return {blogs, pagesCount, pageNumber, pageSize, totalCount}
 }
 
-export const postsPS = async (PostModel, payload, filter = {}): Promise<any> => {
+export const postsPS = async (dataSource, payload, filter = {}): Promise<any> => {
     const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
-    const totalCount: number = await PostModel.countDocuments(filter)
+
+    const offset = pageSize * pageNumber - pageSize
+
+    const count = await dataSource.query(`
+    SELECT COUNT(*)
+    FROM "Posts"`)
+
+    const result: postT[] = await dataSource.query(`
+    SELECT "id", "title", "shortDescription", "content", 
+    "blogId", "blogName","createdAt","likesCount",
+    "dislikesCount", "myStatus", FROM "Posts"
+    ORDER BY "${sortBy}" ${sortDirection}
+    LIMIT $1 OFFSET $2`,
+    [pageSize, offset])
+
+    const posts = result.map((post) => {
+        return {
+            id: post.id,
+            title: post.title,
+            shortDescription: post.shortDescription,
+            content: post.content,
+            blogId: post.blogId,
+            blogName: post.blogName,
+            createdAt: post.createdAt,
+            extendedLikesInfo: {
+                likesCount: post.likesCount,
+                dislikesCount: post.dislikesCount,
+                myStatus: post.myStatus
+            },
+            newestLikes: []
+        }
+    })
+
+    const totalCount = +count[0].count
     const pagesCount = Math.ceil(totalCount / pageSize)
 
-    const posts = await PostModel
-        .find(filter, {projection: {_id: 0, comments: 0}})
-        .sort({[sortBy!]: sortDirection})
-        .skip(pageSize * pageNumber - pageSize)
-        .limit(pageSize)
-        .lean()
     return {posts, pagesCount, pageNumber, pageSize, totalCount}
 }
 

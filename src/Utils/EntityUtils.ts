@@ -1,5 +1,5 @@
 import * as uuid from "uuid";
-import {commentsT, newestLikesT, reactionsT, UserAccountDBType, userViewT} from "../Types/types";
+import {commentsT, newestLikesT, postT, reactionsT, UserAccountDBType, userViewT} from "../Types/types";
 import bcrypt from "bcrypt";
 
 export const EntityUtils = {
@@ -36,7 +36,7 @@ export const EntityUtils = {
 
         return {AccountData, EmailConfirmation, ViewUser}
     },
-    GetPost: (post, userId): any => {
+    GetPost: (post: postT, userId, reactions, newestLikes): any => {
         return {
             id: post.id,
             title: post.title,
@@ -46,15 +46,15 @@ export const EntityUtils = {
             blogName: post.blogName,
             createdAt: post.createdAt,
             extendedLikesInfo: {
-                likesCount: post.extendedLikesInfo.likesCount,
-                dislikesCount: post.extendedLikesInfo.dislikesCount,
-                myStatus: post.reactions.reduce((ac: string, r: reactionsT) => {
-                    if (r.userId === userId) {
+                likesCount: post.likesCount,
+                dislikesCount: post.dislikesCount,
+                myStatus: reactions.reduce((ac: string, r: reactionsT) => {
+                    if (r.userId === userId && r.postId === post.id ) {
                         return r.status
                     }
                     return ac
                 }, 'None'),
-                newestLikes: post.extendedLikesInfo.newestLikes.map((el: newestLikesT, i: number) => {
+                newestLikes: newestLikes.map((el: newestLikesT, i: number) => {
                     if (i < 3) {
                         return {
                             userId: el.userId,
@@ -68,7 +68,7 @@ export const EntityUtils = {
         }
     },
     CreatePost: (title: string, shortDescription: string,
-                 content: string, blogId: string, blogName: string) => {
+                 content: string, blogId: string, blogName: string): postT => {
         return {
             id: uuid.v4(),
             title,
@@ -77,14 +77,9 @@ export const EntityUtils = {
             blogId,
             blogName,
             createdAt: new Date().toISOString(),
-            comments: [],
-            reactions: [],
-            extendedLikesInfo: {
-                likesCount: 0,
-                dislikesCount: 0,
-                myStatus: 'None',
-                newestLikes: []
-            }
+            likesCount: 0,
+            dislikesCount: 0,
+            myStatus: 'None',
         }
     },
     createViewComment: (comment: commentsT, userId: string) => {

@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from '../Services/user.service';
 import {BasicAuthGuard} from "../Middleware/AuthGuard";
+import {createUserPayloadClass} from "../Types/classesTypes";
 
 export type queryPayload = {
     pageNumber: number,
@@ -25,11 +26,6 @@ export type queryPayload = {
 export class UserController {
     constructor(private readonly UserService: UserService) {}
 
-    @Delete()
-    async deleteAll() {
-        return this.UserService.deleteAll()
-    }
-
     @UseGuards(BasicAuthGuard)
     @Get()
     async getAllUsers(@Query() payload: queryPayload) {
@@ -42,7 +38,7 @@ export class UserController {
     }
     @UseGuards(BasicAuthGuard)
     @Post()
-    async createUser(@Body() createUserPayload) {
+    async createUser(@Body() createUserPayload: createUserPayloadClass) {
         return await this.UserService.createUser(createUserPayload)
     }
     @UseGuards(BasicAuthGuard)

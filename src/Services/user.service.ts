@@ -6,6 +6,7 @@ import {EntityUtils} from "../Utils/EntityUtils";
 import {emailAdapter} from "../Utils/email-adapter";
 import {Users} from "../Schemes/UserSchema";
 import {usersPS} from "../Utils/PaginationAndSort";
+import {UserSQL} from "../Types/types";
 
 @Injectable()
 export class UserService {
@@ -14,7 +15,7 @@ export class UserService {
 
     async deleteAll() {
         return await this.dataSource.query(`
-        DELETE * FROM "Users"
+        DELETE FROM "Users"
         `)
     }
 
@@ -45,7 +46,7 @@ export class UserService {
 
         if (userByEmail.length || userByLogin.length) throw new BadRequestException([{
             message: 'email or login already exist',
-            field: userByLogin ? 'login' : 'email'
+            field: userByLogin.length ? 'login' : 'email'
         }])
 
         const {AccountData, EmailConfirmation, ViewUser} = await EntityUtils.CreateUser(login, email, password)
@@ -72,6 +73,11 @@ export class UserService {
     }
 
     async deleteUser(id) {
+
+        const user: UserSQL[] = await this.dataSource.query(`
+        SELECT * FROM "Users" where id = $1
+        `, [id])
+        if(!user.length) throw new HttpException('Not Found', 404)
         return this.dataSource.query(`
         DELETE FROM "Users"
         where id = $1

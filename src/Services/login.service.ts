@@ -18,20 +18,21 @@ export class LoginService {
         const tokenPayload = getResultByToken(token)
         if(!tokenPayload || !tokenPayload.userId) throw new UnauthorizedException()
 
-        const foundUser: userT = await this.dataSource.query(`
+        const foundUser: UserSQL[] = await this.dataSource.query(`
         SELECT * FROM "Users" where id = $1
         `, [tokenPayload.userId])
-        if(!foundUser) throw new HttpException('NOT FOUND', 404)
+
+        if(!foundUser.length) throw new HttpException('NOT FOUND', 404)
         else {
-            const {email, login} = foundUser
-            return {email, login, userId: tokenPayload.userId}
+            const {email, username} = foundUser[0]
+            return {email, login: username, userId: tokenPayload.userId}
         }
     }
 
 
     async login(payload, ip, headers){
         const {loginOrEmail, password} = payload
-        const foundUserQuery: userT = await this.dataSource.query(`
+        const foundUserQuery: UserSQL[] = await this.dataSource.query(`
         SELECT * FROM "Users"
         where username = $1 OR email = $1
         `, [loginOrEmail])
@@ -43,8 +44,8 @@ export class LoginService {
         if(isValidPassword) {
             let deviceName = headers["user-agent"]
             const deviceId = uuid.v4()
-            const token = await createToken(foundUser.id, deviceId, ip,'10m')
-            const RefreshToken = await createToken(foundUser.id, deviceId,ip, '20m')
+            const token = await createToken(foundUser.id, deviceId, ip,'10s')
+            const RefreshToken = await createToken(foundUser.id, deviceId,ip, '20s')
             const {iat} = jwt.decode(token) as {iat: number}
             const newDevice = {
                 ip,
@@ -69,12 +70,21 @@ export class LoginService {
         const tokenPayload = getResultByToken(refreshToken)
         if(!tokenPayload) throw new UnauthorizedException()
 
+        const isTokenInBL = await this.dataSource.query(`
+        SELECT * FROM "BlackListTokens" where token = $1
+        `, [refreshToken])
+        if(isTokenInBL.length) throw new UnauthorizedException()
+
         const {userId, deviceId} = tokenPayload
 
         await this.dataSource.query(`
+        INSERT INTO "BlackListTokens" ("token")
+        VALUES ($1)`, [refreshToken])
+
+        await this.dataSource.query(`
         DELETE FROM "Sessions" 
-        where id = $1 AND deviceId = $2`,
-            [userId, deviceId])
+        where "userId" = $1 
+        AND "deviceId" = $2`, [userId, deviceId])
 
     }
 
@@ -82,28 +92,39 @@ export class LoginService {
         if(!refreshToken) throw new UnauthorizedException()
         if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
 
+        const isTokenInBL = await this.dataSource.query(`
+        SELECT * FROM "BlackListTokens" where token = $1
+        `, [refreshToken])
+        if(isTokenInBL.length) throw new UnauthorizedException()
+
+        await this.dataSource.query(`
+        INSERT INTO "BlackListTokens" ("token")
+        VALUES ($1)`, [refreshToken])
+
         const tokenPayload: any = getResultByToken(refreshToken)
+
         if(new Date(tokenPayload.exp * 1000) < new Date()) throw new UnauthorizedException()
 
-        const user: UserSQL | null = await this.dataSource.query(
+        const user: UserSQL[] = await this.dataSource.query(
             `SELECT * FROM "Users" where id = $1`,
             [tokenPayload.userId])
-        if (!user) throw new UnauthorizedException()
+        if (!user.length) throw new UnauthorizedException()
 
         const AccessToken = await createToken(tokenPayload.userId, tokenPayload.deviceId, tokenPayload.ip,'10s')
         const newRefreshToken = await createToken(tokenPayload.userId, tokenPayload.deviceId, tokenPayload.ip,'20s')
 
         const {iat} = jwt.decode(newRefreshToken) as {iat: number}
         const sessions = await this.dataSource.query(
-        `SELECT * FROM "Users" where id = $1`,
+        `SELECT * FROM "Sessions" where "userId" = $1`,
         [tokenPayload.userId])
         const sessionForUpdate = sessions.find(s => s.deviceId === tokenPayload.deviceId)
         if(!sessionForUpdate) throw new UnauthorizedException()
 
         const newLastDate = sessionForUpdate.lastActiveDate = new Date(iat * 1000).toISOString()
         await this.dataSource.query(
-            `UPDATE "Sessions" SET lastActiveDate = $1 where id = $2`,
-            [newLastDate, tokenPayload.userId])
+            `UPDATE "Sessions" SET "lastActiveDate" = $1 
+            where "userId" = $2 AND "deviceId" = $3`,
+            [newLastDate, tokenPayload.userId, tokenPayload.deviceId])
 
         return {accessToken: AccessToken, RefreshToken: newRefreshToken}
     }

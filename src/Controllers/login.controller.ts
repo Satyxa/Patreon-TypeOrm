@@ -6,13 +6,13 @@ import {Throttle} from "@nestjs/throttler";
 @Controller('auth')
 export class LoginController {
     constructor(private readonly LoginService: LoginService) {}
-    @UseGuards(BasicAuthGuard)
     @Get('me')
     async getMe(@Headers() headers) {
         return this.LoginService.getMe(headers.authorization)
     }
     @Throttle({ default: { limit: 5, ttl: 10000 } })
     @Post('login')
+    @HttpCode(200)
     async login(@Body() signInPayload,
                 @Ip() ip,
                 @Headers() headers,
