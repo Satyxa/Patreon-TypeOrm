@@ -43,21 +43,17 @@ export class createBlogPayloadClass {
     websiteUrl: string
 }
 
-// export class createdPostPayloadClass {
-//     @Transform(param => param.value.trim())
-//     @Length(1, 30)
-//     title: string
-//     @Transform(param => param.value.trim())
-//     @Length(1, 100)
-//     shortDescription: string
-//     @Transform(param => param.value.trim())
-//     @Length(1, 1000)
-//     content: string
-//     @Validate(checkBlogId, {
-//         message: 'Title is too short or long!',
-//     })
-//     blogId?: string
-// }
+export class createdPostPayloadClass {
+    @Transform(param => param.value.trim())
+    @Length(1, 30)
+    title: string
+    @Transform(param => param.value.trim())
+    @Length(1, 100)
+    shortDescription: string
+    @Transform(param => param.value.trim())
+    @Length(1, 1000)
+    content: string
+}
 
 export class createdPostForBlogPayloadClass {
     @Transform(param => param.value.trim())

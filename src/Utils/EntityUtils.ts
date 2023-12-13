@@ -1,6 +1,7 @@
 import * as uuid from "uuid";
 import {commentsT, newestLikesT, postT, reactionsT, UserAccountDBType, userViewT} from "../Types/types";
 import bcrypt from "bcrypt";
+import {DataSource} from "typeorm";
 
 export const EntityUtils = {
     CreateUser: async (login, email, password) => {
@@ -67,8 +68,16 @@ export const EntityUtils = {
             }
         }
     },
-    CreatePost: (title: string, shortDescription: string,
-                 content: string, blogId: string, blogName: string): postT => {
+    CreatePost: async (title: string, shortDescription: string,
+                 content: string, blogId: string, blogName: string,
+                 dataSource: DataSource) => {
+        await this.dataSource.query(`
+        INSERT INTO "Posts" ("id", "title", "shortDescription",
+                "content", "blogId", "blogName", "createdAt",
+                "likesCount", "dislikesCount", "myStatus")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [uuid.v4(), title, shortDescription, content, blogId,
+            blogName, new Date().toISOString(), 0, 0, 'None'])
         return {
             id: uuid.v4(),
             title,
@@ -77,9 +86,11 @@ export const EntityUtils = {
             blogId,
             blogName,
             createdAt: new Date().toISOString(),
-            likesCount: 0,
-            dislikesCount: 0,
-            myStatus: 'None',
+            extendedLikesInfo: {
+                likesCount: 0,
+                dislikesCount: 0,
+                myStatus: 'None',
+            }
         }
     },
     createViewComment: (comment: commentsT, userId: string) => {

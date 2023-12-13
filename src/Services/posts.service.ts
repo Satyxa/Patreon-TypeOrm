@@ -3,10 +3,11 @@ import {commentsPS, postsPS} from "../Utils/PaginationAndSort";
 import {EntityUtils} from "../Utils/EntityUtils";
 import {BadRequestException, HttpException, Injectable, UnauthorizedException} from "@nestjs/common";
 import {blogsT, newestLikesT, postT, reactionsT, UserAccountDBType} from "../Types/types";
-import {getResultByToken} from "../Utils/authentication";
+import {getResultByToken, getUserId} from "../Utils/authentication";
 import {InjectDataSource} from "@nestjs/typeorm";
 import {DataSource} from "typeorm";
 import {EntityWithReactions} from "../Utils/EntityWithReactions";
+import {CheckEntityId} from "../Utils/checkEntityId";
 
 @Injectable()
 export class PostService {
@@ -20,15 +21,10 @@ export class PostService {
         const {posts, pagesCount, pageNumber, pageSize, totalCount} = await postsPS(this.dataSource, payload, {})
         const {reactions, newestLikes} = EntityWithReactions.getPostsInfo(this.dataSource)
 
-        let userId = ''
-        if(headers.authorization){
-            const accessToken = headers.authorization.split(' ')[1]
-            const result = getResultByToken(accessToken)
-            if(result) userId = result.userId
-        }
-        const viewPosts = posts.map(post => {
-            return EntityUtils.GetPost(post, userId, reactions, newestLikes)
-        })
+        const userId = getUserId(headers)
+
+        const viewPosts = posts.map(post =>
+            EntityUtils.GetPost(post, userId, reactions, newestLikes))
         return ({
             pagesCount, page: pageNumber, pageSize,
             totalCount, items: viewPosts
@@ -38,40 +34,22 @@ export class PostService {
     async getOnePost(id, headers) {
         const {reactions, newestLikes} = EntityWithReactions.getPostsInfo(this.dataSource)
 
-        let userId = ''
-        if(headers.authorization){
-            const accessToken = headers.authorization.split(' ')[1]
-            const result = getResultByToken(accessToken)
-            if(result) userId = result.userId
-        }
-        const post = await this.dataSource.query(`
-        SELECT * FROM "Posts" where "postId" = $1
-        `, [id])
-
-        if (!post.length) throw new HttpException('Not Found', 404)
+        const userId = getUserId(headers)
+        const post = await CheckEntityId.checkPostId(this.dataSource, id)
+        
         return EntityUtils.GetPost(post[0], userId, reactions, newestLikes)
     }
 
     async createPost(payload) {
         const {title, shortDescription, content, blogId} = payload
-        const blog: blogsT | null = await this.BlogModel.findOne({id: blogId})
-        if (!blog) throw new HttpException('Not Found', 404)
+        const blog = await CheckEntityId.checkBlogId(this.dataSource, blogId, 'for post')
 
-        const newPost: postT = EntityUtils.CreatePost(title, shortDescription, content, blogId, blog.name)
-
-        const createdPost = new this.PostModel(newPost)
-        await createdPost.save()
-
-        const {comments, reactions, ...post} = newPost
-
-        return post
+        return await EntityUtils.CreatePost(title, shortDescription, content,
+            blogId, blog[0].name, this.dataSource)
     }
 
     async deletePost(id) {
-        const post = await this.dataSource.query(`
-        SELECT * FROM "Posts" where id = $1
-        `, [id])
-        if (!post.length) throw new HttpException('Not Found', 404)
+        await CheckEntityId.checkPostId(this.dataSource, id)
         
         await this.dataSource.query(`
         DELETE FROM "Posts" where id = $1
@@ -80,20 +58,16 @@ export class PostService {
 
     async updatePost(id, payload) {
         const {title, shortDescription, content, blogId} = payload
-        const post = await this.PostModel.findOne({id})
-        const blog: blogsT | null = await this.BlogModel.findOne({id: blogId})
-        if (!post) throw new HttpException('Not Found', 404)
-        if(!blog) throw new BadRequestException([{ field: 'blogId', message: 'Such blog doesnt exist'}])
-        await this.PostModel.updateOne({id},
-            {
-                $set: {
-                    title,
-                    shortDescription,
-                    content,
-                    blogId,
-                    blogName: blog!.name,
-                }
-            })
+
+        const blog = await CheckEntityId.checkBlogId(this.dataSource, blogId, 'for post')
+        await CheckEntityId.checkPostId(this.dataSource, id)
+
+        await this.dataSource.query(
+        `UPDATE "Posts" SET title = $1, shortDescription = $2,
+        content = $3, blogId = $4, blogName = $5
+        where id = $6`,
+        [title, shortDescription, content, blogId,  blog[0]!.name, id])
+
     }
 
     // async getCommentsForOnePost(id, payload, headers) {

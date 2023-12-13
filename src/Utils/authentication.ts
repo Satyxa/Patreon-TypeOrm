@@ -21,3 +21,13 @@ export const createToken = async (id: string, deviceId: string, ip: string, exp:
 //     const filter = {$or: [{'AccountData.email': loginOrEmail}, {'AccountData.username': loginOrEmail}]}
 //     return await UserModel.findOne(filter)
 // }
+
+export const getUserId = async (headers) => {
+    let userId = ''
+    if(headers.authorization){
+        const accessToken = headers.authorization.split(' ')[1]
+        const result = getResultByToken(accessToken)
+        if(result) userId = result.userId
+    }
+    return userId
+}

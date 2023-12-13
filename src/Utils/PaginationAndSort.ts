@@ -46,18 +46,37 @@ export const usersPS = async (dataSource, payload) => {
     return {users, pagesCount, pageNumber, pageSize, totalCount}
 }
 
-export const blogsPS = async (BlogModel, payload) => {
+export const blogsPS = async (dataSource, payload) => {
     const {pageNumber, pageSize, sortBy, searchNameTerm, sortDirection} = getValuesPS(payload)
-    const filter: FilterQuery<blogsT> = {name: {$regex: searchNameTerm ?? '', $options: 'i'}}
-    const totalCount = await BlogModel.countDocuments(filter)
+
+    const offset = pageSize * pageNumber - pageSize
+    const count = await dataSource.query(`
+    SELECT COUNT(*)
+    FROM "Blogs"`)
+
+    const result: blogsT[] = await dataSource.query(`
+    SELECT "id", "name", "description", "websiteUrl", 
+    "createdAt","isMembership" FROM "Posts"
+    where (name ilike $1) 
+    ORDER BY "${sortBy}" ${sortDirection}
+    LIMIT $1 OFFSET $2`,
+    [pageSize, offset])
+
+    const blogs = result.map((blog) => {
+        return {
+            id: blog.id,
+            name: blog.name,
+            description: blog.description,
+            websiteUrl: blog.websiteUrl,
+            isMembership: blog.isMembership,
+            createdAt: blog.createdAt,
+        }
+    })
+
+
+    const totalCount = +count[0].count
     const pagesCount = Math.ceil(totalCount / pageSize)
 
-    const blogs = await BlogModel
-        .find(filter, {_id: 0, __v: 0})
-        .sort({[sortBy!]: sortDirection})
-        .skip(pageSize * pageNumber - pageSize)
-        .limit(pageSize)
-        .lean()
     return {blogs, pagesCount, pageNumber, pageSize, totalCount}
 }
 
@@ -90,9 +109,9 @@ export const postsPS = async (dataSource, payload, filter = {}): Promise<any> =>
             extendedLikesInfo: {
                 likesCount: post.likesCount,
                 dislikesCount: post.dislikesCount,
-                myStatus: post.myStatus
-            },
-            newestLikes: []
+                myStatus: post.myStatus,
+                newestLikes: []
+            }
         }
     })
 

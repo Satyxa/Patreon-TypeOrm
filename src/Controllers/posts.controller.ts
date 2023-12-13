@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import {PostService} from "../Services/posts.service";
 import {BasicAuthGuard} from "../Middleware/AuthGuard";
+import {createdPostPayloadClass} from "../Types/classesTypes";
 
 type queryPayload = {
     pageNumber: number,
@@ -39,11 +40,11 @@ export class PostController {
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.PostService.getOnePost(id, headers)
     }
-    // @UseGuards(BasicAuthGuard)
-    // @Post()
-    // async createPost(@Body() createdPostPayload: createdPostPayloadClass) {
-    //     return await this.PostService.createPost(createdPostPayload)
-    // }
+    @UseGuards(BasicAuthGuard)
+    @Post()
+    async createPost(@Body() createdPostPayload: createdPostPayloadClass) {
+        return await this.PostService.createPost(createdPostPayload)
+    }
     @UseGuards(BasicAuthGuard)
     @Delete(':id')
     @HttpCode(204)
@@ -53,14 +54,14 @@ export class PostController {
         return await this.PostService.deletePost(id)
     }
     //
-    // @UseGuards(BasicAuthGuard)
-    // @Put(':id')
-    // @HttpCode(204)
-    // async updatePost(@Param('id') id: string,
-    //                  @Body() updatePostPayload: createdPostPayloadClass) {
-    //     if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-    //     return await this.PostService.updatePost(id, updatePostPayload)
-    // }
+    @UseGuards(BasicAuthGuard)
+    @Put(':id')
+    @HttpCode(204)
+    async updatePost(@Param('id') id: string,
+                     @Body() updatePostPayload: createdPostPayloadClass) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
+        return await this.PostService.updatePost(id, updatePostPayload)
+    }
 
     // LIKES FOR POST
 
