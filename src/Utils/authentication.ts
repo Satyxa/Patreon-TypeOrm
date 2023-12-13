@@ -16,11 +16,6 @@ export const createToken = async (id: string, deviceId: string, ip: string, exp:
     return jwt.sign({userId: id, ip, deviceId}, secretKey, {expiresIn: exp})
 
 }
-//
-// export const findUserByLoginOrEmail = async (loginOrEmail, UserModel): Promise<User | null>  => {
-//     const filter = {$or: [{'AccountData.email': loginOrEmail}, {'AccountData.username': loginOrEmail}]}
-//     return await UserModel.findOne(filter)
-// }
 
 export const getUserId = async (headers) => {
     let userId = ''

@@ -129,4 +129,15 @@ export const EntityUtils = {
             addedAt: new Date().toISOString()
         }
     },
+    createBlog: (id, name, description, websiteUrl,
+                 createdAt) => {
+        return {
+            id,
+            name,
+            description,
+            websiteUrl,
+            isMembership: false,
+            createdAt
+        }
+    }
 }

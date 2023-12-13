@@ -37,14 +37,8 @@ export class BlogService {
         [id, name, description,
         websiteUrl, false, createdAt])
 
-        return {
-            id,
-            name,
-            description,
-            websiteUrl,
-            isMembership: false,
-            createdAt
-        }
+        return EntityUtils.createBlog(id, name, description,
+                            websiteUrl, createdAt)
     }
     async deleteBlog(id){
         await CheckEntityId.checkBlogId(this.dataSource, id, 'for blog')
