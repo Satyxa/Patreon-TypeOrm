@@ -88,3 +88,10 @@ export class newPasswordPayloadClass {
     @IsNotEmpty()
     recoveryCode: string
 }
+
+export class updatePostForBlogPayload {
+    @IsNotEmpty()
+    blogId: string
+    @IsNotEmpty()
+    postId: string
+}

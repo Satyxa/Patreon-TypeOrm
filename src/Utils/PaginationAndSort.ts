@@ -3,7 +3,7 @@ import {blogsT, commentsT, extendedLikesInfoT, newestLikesT, postT, UserAccountD
 
 export const getValuesPS = (payload) => {
     let {pageNumber, pageSize, sortBy, searchLoginTerm, searchEmailTerm, sortDirection, searchNameTerm} = payload
-    if(!searchLoginTerm && !searchEmailTerm){
+    if (!searchLoginTerm && !searchEmailTerm) {
         searchEmailTerm = ''
         searchLoginTerm = ''
     }
@@ -20,8 +20,10 @@ export const getValuesPS = (payload) => {
 
 export const usersPS = async (dataSource, payload) => {
 
-    let {pageNumber, pageSize, sortBy, searchLoginTerm,
-        searchEmailTerm, sortDirection} = getValuesPS(payload)
+    let {
+        pageNumber, pageSize, sortBy, searchLoginTerm,
+        searchEmailTerm, sortDirection
+    } = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
 
@@ -30,7 +32,7 @@ export const usersPS = async (dataSource, payload) => {
     FROM "Users" 
     where (username ilike $1 OR email ilike $2)`,
 
-    ['%' + searchLoginTerm + '%', '%' + searchEmailTerm + '%'])
+        ['%' + searchLoginTerm + '%', '%' + searchEmailTerm + '%'])
     console.log(sortBy)
     const users = await dataSource.query(`
     SELECT "id", "createdAt", "username" as "login", "email" FROM "Users"
@@ -38,7 +40,7 @@ export const usersPS = async (dataSource, payload) => {
     ORDER BY "${sortBy}" ${sortDirection}
     LIMIT $1 OFFSET $2`,
 
-    [pageSize, offset, '%' + searchLoginTerm + '%', '%' + searchEmailTerm + '%'])
+        [pageSize, offset, '%' + searchLoginTerm + '%', '%' + searchEmailTerm + '%'])
 
     const totalCount = +count[0].count
     const pagesCount = Math.ceil(totalCount / pageSize)
@@ -50,17 +52,14 @@ export const blogsPS = async (dataSource, payload) => {
     const {pageNumber, pageSize, sortBy, searchNameTerm, sortDirection} = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
-    const count = await dataSource.query(`
-    SELECT COUNT(*)
-    FROM "Blogs"`)
 
     const result: blogsT[] = await dataSource.query(`
     SELECT "id", "name", "description", "websiteUrl", 
-    "createdAt","isMembership" FROM "Posts"
-    where (name ilike $1) 
+    "createdAt","isMembership" FROM "Blogs"
+    where ("name" ilike $3) 
     ORDER BY "${sortBy}" ${sortDirection}
     LIMIT $1 OFFSET $2`,
-    [pageSize, offset])
+        [pageSize, offset, '%' + searchNameTerm + '%'])
 
     const blogs = result.map((blog) => {
         return {
@@ -73,31 +72,28 @@ export const blogsPS = async (dataSource, payload) => {
         }
     })
 
-
-    const totalCount = +count[0].count
+    const totalCount = blogs.length
     const pagesCount = Math.ceil(totalCount / pageSize)
 
     return {blogs, pagesCount, pageNumber, pageSize, totalCount}
 }
 
-export const postsPS = async (dataSource, payload, filter = {}): Promise<any> => {
+export const postsPS = async (dataSource, payload, filter = null): Promise<any> => {
     const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
 
-    const count = await dataSource.query(`
-    SELECT COUNT(*)
-    FROM "Posts"`)
+    let result: postT[] = await dataSource.query(`
+            SELECT "id", "title", "shortDescription", "content", 
+            "blogId", "blogName","createdAt","likesCount",
+            "dislikesCount", "myStatus" FROM "Posts"
+            ORDER BY "${sortBy}" ${sortDirection}
+            LIMIT $1 OFFSET $2`,
+            [pageSize, offset])
 
-    const result: postT[] = await dataSource.query(`
-    SELECT "id", "title", "shortDescription", "content", 
-    "blogId", "blogName","createdAt","likesCount",
-    "dislikesCount", "myStatus", FROM "Posts"
-    ORDER BY "${sortBy}" ${sortDirection}
-    LIMIT $1 OFFSET $2`,
-    [pageSize, offset])
+    if(filter) result = result.filter(post => post.blogId === filter)
 
-    const posts = result.map((post) => {
+    const posts = result.map(post => {
         return {
             id: post.id,
             title: post.title,
@@ -106,16 +102,12 @@ export const postsPS = async (dataSource, payload, filter = {}): Promise<any> =>
             blogId: post.blogId,
             blogName: post.blogName,
             createdAt: post.createdAt,
-            extendedLikesInfo: {
-                likesCount: post.likesCount,
-                dislikesCount: post.dislikesCount,
-                myStatus: post.myStatus,
-                newestLikes: []
-            }
+            likesCount: post.likesCount,
+            dislikesCount: post.dislikesCount,
         }
     })
 
-    const totalCount = +count[0].count
+    const totalCount = posts.length
     const pagesCount = Math.ceil(totalCount / pageSize)
 
     return {posts, pagesCount, pageNumber, pageSize, totalCount}

@@ -1,20 +1,22 @@
 import {HttpCode, HttpException, Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
-import {Blog, BlogDocument} from "../Mongoose/BlogSchema";
 import {FilterQuery, Model} from "mongoose";
 import {blogsT, postT} from "../Types/types";
 import {blogsPS, getValuesPS, postsPS} from "../Utils/PaginationAndSort";
 import * as uuid from 'uuid'
-import {Post, PostDocument} from "../Mongoose/PostSchema";
 import {EntityUtils} from "../Utils/EntityUtils";
-import {getResultByToken} from "../Utils/authentication";
+import {getResultByToken, getUserId} from "../Utils/authentication";
 import {InjectDataSource} from "@nestjs/typeorm";
 import {DataSource} from "typeorm";
 import {CheckEntityId} from "../Utils/checkEntityId";
+import {EntityWithReactions} from "../Utils/EntityWithReactions";
 @Injectable()
 export class BlogService {
     constructor(@InjectDataSource() protected dataSource: DataSource) {}
-    deleteAllBlogs(): Promise<any> { return this.BlogModel.deleteMany({}) }
+    deleteAllBlogs() {
+        return this.dataSource
+            .query(`DELETE FROM "Blogs"`)
+    }
 
     async getAllBlogs(payload) {
         const {blogs, pagesCount, pageNumber,
@@ -53,27 +55,23 @@ export class BlogService {
 
         await this.dataSource.query(`
         UPDATE "Blogs" SET name = $1,
-        description = $2, websiteUrl = $3`,
+        description = $2, "websiteUrl" = $3`,
         [name, description, websiteUrl])
     }
 
-    // async getPostsForBlog(id, payload, headers) {
-    //     let userId = ''
-    //     const filter = {blogId: id}
-    //
-    //     if(headers.authorization){
-    //         const accessToken = headers.authorization.split(' ')[1]
-    //         const result = getResultByToken(accessToken)
-    //         if(result) userId = result.userId
-    //     }
-    //     const blog = await this.BlogModel.findOne({id})
-    //     if(!blog) throw new HttpException('Not Found', 404)
-    //     let {posts, pagesCount, pageNumber, pageSize, totalCount} = await postsPS(this.PostModel, payload, filter)
-    //
-    //     const viewPosts = posts.map(post => {
-    //         return EntityUtils.GetPost(post, userId)
-    //     })
-    //     return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: viewPosts})
-    // }
+    async getPostsForBlog(id, payload, headers) {
+        const userId = await getUserId(headers)
+        await CheckEntityId
+            .checkBlogId(this.dataSource, id, 'for post')
+        console.log(2)
+        let {posts, pagesCount, pageNumber, pageSize, totalCount} = await postsPS(this.dataSource, payload, id)
+        const {reactions, newestLikes} = await EntityWithReactions.getPostsInfo(this.dataSource)
+        console.log(3)
+        const viewPosts = posts.map(post =>
+            EntityUtils.GetPost(post, userId, reactions, newestLikes)
+        )
+        console.log(4)
+        return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: viewPosts})
+    }
 
 }

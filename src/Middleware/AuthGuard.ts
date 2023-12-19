@@ -41,8 +41,10 @@ export class BasicAuthGuard implements CanActivate {
             const data = atob((headersData).replace('Basic ', ''))
             const login = data.split(':')[0]
             const password = data.split(':')[1]
-
-            if (login === 'admin' && password === 'qwerty') return true
+            if (login === 'admin' && password === 'qwerty') {
+                console.log('basic guard success')
+                return true
+            }
             else throw new UnauthorizedException()
 
         } else throw new UnauthorizedException()

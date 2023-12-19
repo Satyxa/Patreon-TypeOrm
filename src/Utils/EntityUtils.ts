@@ -38,6 +38,7 @@ export const EntityUtils = {
         return {AccountData, EmailConfirmation, ViewUser}
     },
     GetPost: (post: postT, userId, reactions, newestLikes): any => {
+        console.log(post)
         return {
             id: post.id,
             title: post.title,
@@ -47,8 +48,8 @@ export const EntityUtils = {
             blogName: post.blogName,
             createdAt: post.createdAt,
             extendedLikesInfo: {
-                likesCount: post.likesCount,
-                dislikesCount: post.dislikesCount,
+                likesCount: +post.likesCount,
+                dislikesCount: +post.dislikesCount,
                 myStatus: reactions.reduce((ac: string, r: reactionsT) => {
                     if (r.userId === userId && r.postId === post.id ) {
                         return r.status
@@ -71,7 +72,7 @@ export const EntityUtils = {
     CreatePost: async (title: string, shortDescription: string,
                  content: string, blogId: string, blogName: string,
                  dataSource: DataSource) => {
-        await this.dataSource.query(`
+        await dataSource.query(`
         INSERT INTO "Posts" ("id", "title", "shortDescription",
                 "content", "blogId", "blogName", "createdAt",
                 "likesCount", "dislikesCount", "myStatus")

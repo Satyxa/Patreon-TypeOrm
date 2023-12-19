@@ -17,6 +17,10 @@ import {Users} from "./Schemes/UserSchema";
 import {UsersModule} from "./Moduls/user.module";
 import {DataSource} from "typeorm";
 import {APP_GUARD} from "@nestjs/core";
+import {BlogController} from "./Controllers/blogs.controller";
+import {PostController} from "./Controllers/posts.controller";
+import {BlogService} from "./Services/blogs.service";
+import {PostService} from "./Services/posts.service";
 
 
 @Module({
@@ -42,12 +46,13 @@ import {APP_GUARD} from "@nestjs/core";
         }]),
     ],
     controllers: [AppController, LoginController, RegistrationController,
-        EmailController, DevicesController],
+        EmailController, DevicesController, BlogController, PostController],
     providers: [{
         provide: APP_GUARD,
         useClass: ThrottlerGuard
     },
-        AppService, LoginService, EmailService, DevicesService, UserService],
+        AppService, LoginService, EmailService, DevicesService, UserService,
+    BlogService, PostService],
 })
 export class AppModule {
     constructor(private dataSource: DataSource) {}

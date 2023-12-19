@@ -18,8 +18,8 @@ export class PostService {
     }
 
     async getAllPosts(payload, headers): Promise<any> {
-        const {posts, pagesCount, pageNumber, pageSize, totalCount} = await postsPS(this.dataSource, payload, {})
-        const {reactions, newestLikes} = EntityWithReactions.getPostsInfo(this.dataSource)
+        const {posts, pagesCount, pageNumber, pageSize, totalCount} = await postsPS(this.dataSource, payload)
+        const {reactions, newestLikes} = await EntityWithReactions.getPostsInfo(this.dataSource)
 
         const userId = getUserId(headers)
 
@@ -32,12 +32,12 @@ export class PostService {
     }
 
     async getOnePost(id, headers) {
-        const {reactions, newestLikes} = EntityWithReactions.getPostsInfo(this.dataSource)
+        const {reactions, newestLikes} = await EntityWithReactions.getPostsInfo(this.dataSource)
 
         const userId = getUserId(headers)
         const post = await CheckEntityId.checkPostId(this.dataSource, id)
-        
-        return EntityUtils.GetPost(post[0], userId, reactions, newestLikes)
+
+        return EntityUtils.GetPost(post, userId, reactions, newestLikes)
     }
 
     async createPost(payload) {
@@ -45,29 +45,28 @@ export class PostService {
         const blog = await CheckEntityId.checkBlogId(this.dataSource, blogId, 'for post')
 
         return await EntityUtils.CreatePost(title, shortDescription, content,
-            blogId, blog[0].name, this.dataSource)
+            blogId, blog.name, this.dataSource)
     }
 
-    async deletePost(id) {
+    async deletePost(id, blogId: string | null = null) {
         await CheckEntityId.checkPostId(this.dataSource, id)
-        
+        if (blogId) await CheckEntityId.checkBlogId(this.dataSource, blogId, 'for blog')
         await this.dataSource.query(`
         DELETE FROM "Posts" where id = $1
         `, [id])
     }
 
-    async updatePost(id, payload) {
+    async updatePost(postId, payload) {
         const {title, shortDescription, content, blogId} = payload
 
         const blog = await CheckEntityId.checkBlogId(this.dataSource, blogId, 'for post')
-        await CheckEntityId.checkPostId(this.dataSource, id)
+        await CheckEntityId.checkPostId(this.dataSource, postId)
 
         await this.dataSource.query(
-        `UPDATE "Posts" SET title = $1, shortDescription = $2,
-        content = $3, blogId = $4, blogName = $5
+        `UPDATE "Posts" SET title = $1, "shortDescription" = $2,
+        content = $3, "blogId" = $4, "blogName" = $5
         where id = $6`,
-        [title, shortDescription, content, blogId,  blog[0]!.name, id])
-
+        [title, shortDescription, content, blogId,  blog.name, postId])
     }
 
     // async getCommentsForOnePost(id, payload, headers) {
