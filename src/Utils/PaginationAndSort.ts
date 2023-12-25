@@ -88,8 +88,7 @@ export const postsPS = async (dataSource, payload, filter = null): Promise<any> 
 
     let count = await dataSource.query(`
     SELECT COUNT(*) 
-    FROM "Posts" 
-    `)
+    FROM "Posts" `)
 
     let result: postT[] = await dataSource.query(`
             SELECT "id", "title", "shortDescription", "content", 
