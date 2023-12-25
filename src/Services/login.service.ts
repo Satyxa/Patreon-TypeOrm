@@ -44,8 +44,8 @@ export class LoginService {
         if(isValidPassword) {
             let deviceName = headers["user-agent"]
             const deviceId = uuid.v4()
-            const token = await createToken(foundUser.id, deviceId, ip,'10s')
-            const RefreshToken = await createToken(foundUser.id, deviceId,ip, '20s')
+            const token = await createToken(foundUser.id, deviceId, ip,'10h')
+            const RefreshToken = await createToken(foundUser.id, deviceId,ip, '20h')
             const {iat} = jwt.decode(token) as {iat: number}
             const newDevice = {
                 ip,
@@ -110,8 +110,8 @@ export class LoginService {
             [tokenPayload.userId])
         if (!user.length) throw new UnauthorizedException()
 
-        const AccessToken = await createToken(tokenPayload.userId, tokenPayload.deviceId, tokenPayload.ip,'10s')
-        const newRefreshToken = await createToken(tokenPayload.userId, tokenPayload.deviceId, tokenPayload.ip,'20s')
+        const AccessToken = await createToken(tokenPayload.userId, tokenPayload.deviceId, tokenPayload.ip,'10h')
+        const newRefreshToken = await createToken(tokenPayload.userId, tokenPayload.deviceId, tokenPayload.ip,'20h')
 
         const {iat} = jwt.decode(newRefreshToken) as {iat: number}
         const sessions = await this.dataSource.query(

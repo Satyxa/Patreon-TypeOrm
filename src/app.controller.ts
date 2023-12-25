@@ -4,6 +4,7 @@ import { UserService } from "./Services/user.service";
 import {DevicesService} from "./Services/devices.service";
 import {BlogService} from "./Services/blogs.service";
 import {PostService} from "./Services/posts.service";
+import {CommentsService} from "./Services/comments.service";
 
 @Controller()
 export class AppController {
@@ -12,7 +13,8 @@ export class AppController {
       private readonly UserService: UserService,
       private readonly DevicesService: DevicesService,
       private readonly BlogService: BlogService,
-      private readonly PostService: PostService
+      private readonly PostService: PostService,
+      private readonly CommentsService: CommentsService
   ) {}
 
   @Get()
@@ -26,6 +28,7 @@ export class AppController {
     await this.DevicesService.deleteAll()
     await this.PostService.deleteAllPosts()
     await this.BlogService.deleteAllBlogs()
+    await this.CommentsService.deleteAll()
   }
 
 }

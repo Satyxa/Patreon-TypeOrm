@@ -1,5 +1,14 @@
 import * as uuid from "uuid";
-import {commentsT, newestLikesT, postT, reactionsT, UserAccountDBType, userViewT} from "../Types/types";
+import {
+    commentsReactionsT,
+    commentsSQL,
+    commentsT,
+    newestLikesT,
+    postT,
+    reactionsT,
+    UserAccountDBType,
+    userViewT
+} from "../Types/types";
 import bcrypt from "bcrypt";
 import {DataSource} from "typeorm";
 
@@ -38,7 +47,10 @@ export const EntityUtils = {
         return {AccountData, EmailConfirmation, ViewUser}
     },
     GetPost: (post: postT, userId, reactions, newestLikes): any => {
-        console.log(post)
+
+        const newestLikesForPost = newestLikes.filter(el => el.postId === post.id).reverse()
+        const reactionsForPost = reactions.filter(el => el.postId === post.id)
+
         return {
             id: post.id,
             title: post.title,
@@ -50,13 +62,13 @@ export const EntityUtils = {
             extendedLikesInfo: {
                 likesCount: +post.likesCount,
                 dislikesCount: +post.dislikesCount,
-                myStatus: reactions.reduce((ac: string, r: reactionsT) => {
+                myStatus: reactionsForPost.reduce((ac: string, r: reactionsT) => {
                     if (r.userId === userId && r.postId === post.id ) {
                         return r.status
                     }
                     return ac
                 }, 'None'),
-                newestLikes: newestLikes.map((el: newestLikesT, i: number) => {
+                newestLikes: newestLikesForPost.map((el: newestLikesT, i: number) => {
                     if (i < 3) {
                         return {
                             userId: el.userId,
@@ -72,42 +84,45 @@ export const EntityUtils = {
     CreatePost: async (title: string, shortDescription: string,
                  content: string, blogId: string, blogName: string,
                  dataSource: DataSource) => {
+        const createdAt = new Date().toISOString()
+        const id = uuid.v4()
         await dataSource.query(`
         INSERT INTO "Posts" ("id", "title", "shortDescription",
                 "content", "blogId", "blogName", "createdAt",
                 "likesCount", "dislikesCount", "myStatus")
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-            [uuid.v4(), title, shortDescription, content, blogId,
-            blogName, new Date().toISOString(), 0, 0, 'None'])
+            [id, title, shortDescription, content, blogId,
+            blogName, createdAt, 0, 0, 'None'])
         return {
-            id: uuid.v4(),
+            id,
             title,
             shortDescription,
             content,
             blogId,
             blogName,
-            createdAt: new Date().toISOString(),
+            createdAt,
             extendedLikesInfo: {
                 likesCount: 0,
                 dislikesCount: 0,
                 myStatus: 'None',
+                newestLikes: []
             }
         }
     },
-    createViewComment: (comment: commentsT, userId: string) => {
+    createViewComment: (comment: commentsSQL, userId: string, reactions: commentsReactionsT[]) => {
         return {
             id: comment.id,
             content: comment.content,
             createdAt: comment.createdAt,
             commentatorInfo: {
-                userId: comment.commentatorInfo.userId,
-                userLogin: comment.commentatorInfo.userLogin
+                userId: comment.userId,
+                userLogin: comment.userLogin
             },
             likesInfo: {
-                likesCount: comment.likesInfo.likesCount,
-                dislikesCount: comment.likesInfo.dislikesCount,
-                myStatus: comment.reactions.reduce((ac, r) => {
-                    if (r.userId == userId) {
+                likesCount: +comment.likesCount,
+                dislikesCount: +comment.dislikesCount,
+                myStatus: reactions.reduce((ac, r) => {
+                    if (r.userId === userId && r.commentId === comment.id) {
                         ac = r.status;
                         return ac
                     }

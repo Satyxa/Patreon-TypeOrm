@@ -14,8 +14,8 @@ import {
     UseGuards
 } from '@nestjs/common';
 import {PostService} from "../Services/posts.service";
-import {BasicAuthGuard} from "../Middleware/AuthGuard";
-import {createdPostPayloadClass} from "../Types/classesTypes";
+import {AuthGuard, BasicAuthGuard} from "../Middleware/AuthGuard";
+import {CommentContentClass, createdPostPayloadClass, LikesPayloadClass} from "../Types/classesTypes";
 
 type queryPayload = {
     pageNumber: number,
@@ -65,36 +65,36 @@ export class PostController {
 
     // LIKES FOR POST
 
-    // @UseGuards(AuthGuard)
-    // @Put(':id/like-status')
-    // @HttpCode(204)
-    // async updatePostLikeStatus(@Param('id') id: string,
-    //                            @Body() likesPayload: LikesPayloadClass,
-    //                            @Req() req: any) {
-    //     if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-    //     return await this.PostService.updatePostLikeStatus(id, likesPayload.likeStatus, req.userId)
-    // }
+    @UseGuards(AuthGuard)
+    @Put(':id/like-status')
+    @HttpCode(204)
+    async updatePostLikeStatus(@Param('id') id: string,
+                               @Body() likesPayload: LikesPayloadClass,
+                               @Req() req: any) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
+        return await this.PostService.updatePostLikeStatus(id, likesPayload.likeStatus, req.userId)
+    }
 
-    // LIKES FOR POST
+    // LIKES FOR POSTT
 
 
     // COMMENTS
-    // @Get(':id/comments')
-    // async getAllCommentsForPost(@Param('id') id: string,
-    //                             @Query() payload: queryPayload,
-    //                             @Headers() headers) {
-    //     if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-    //     return this.PostService.getCommentsForOnePost(id, payload, headers)
-    // }
-    //
-    // @UseGuards(AuthGuard)
-    // @Post(':id/comments')
-    // async createCommentForPost(@Param('id') id: string,
-    //                            @Body() CommentContentPayload: CommentContentClass,
-    //                            @Req() req: any) {
-    //     if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-    //     return this.PostService.createCommentForPost(id, CommentContentPayload.content, req.userId)
-    // }
+    @Get(':id/comments')
+    async getAllCommentsForPost(@Param('id') id: string,
+                                @Query() payload: queryPayload,
+                                @Headers() headers) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
+        return this.PostService.getCommentsForOnePost(id, payload, headers)
+    }
+
+    @UseGuards(AuthGuard)
+    @Post(':id/comments')
+    async createCommentForPost(@Param('id') id: string,
+                               @Body() CommentContentPayload: CommentContentClass,
+                               @Req() req: any) {
+        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
+        return this.PostService.createCommentForPost(id, CommentContentPayload.content, req.userId)
+    }
 
     // COMMENTS
 }

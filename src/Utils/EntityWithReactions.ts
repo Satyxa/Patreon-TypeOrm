@@ -1,37 +1,23 @@
-import {commentsT, UserAccountDBType} from "../Types/types";
+import {commentsT, UserAccountDBType, UserSQL} from "../Types/types";
 
 import * as uuid from 'uuid'
 
 export const EntityWithReactions = {
-    createComment: (id: string, content: string, user: UserAccountDBType) => {
-        const comment: commentsT = {
-            id: uuid.v4(),
-            postId: id,
+    createComment: (id: string, content: string, user: UserSQL, commentId: string, createdAt: string) => {
+        return {
+            id: commentId,
             content,
-            createdAt: new Date().toISOString(),
+            createdAt,
             commentatorInfo: {
                 userId: user.id,
-                userLogin: user.AccountData.username
+                userLogin: user.username
             },
             likesInfo: {
                 likesCount: 0,
                 dislikesCount: 0,
                 myStatus: 'None'
             },
-            reactions: []
         }
-        const viewComment = {
-            content: comment.content,
-            commentatorInfo: comment.commentatorInfo,
-            createdAt: comment.createdAt,
-            id: comment.id,
-            likesInfo: {
-                likesCount: 0,
-                dislikesCount: 0,
-                myStatus: 'None'
-            }
-        }
-        return {viewComment, comment}
     },
 
     getPostsInfo: async (dataSource) => {
@@ -42,5 +28,9 @@ export const EntityWithReactions = {
             await dataSource.query(`SELECT * FROM "NewestLikes"`)
 
         return {reactions, newestLikes}
+    },
+
+    getCommentsInfo: async (dataSource) => {
+        return await dataSource.query(`SELECT * FROM "CommentsReactions"`)
     }
 }

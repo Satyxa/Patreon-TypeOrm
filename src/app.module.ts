@@ -21,6 +21,8 @@ import {BlogController} from "./Controllers/blogs.controller";
 import {PostController} from "./Controllers/posts.controller";
 import {BlogService} from "./Services/blogs.service";
 import {PostService} from "./Services/posts.service";
+import {CommentsController} from "./Controllers/comments.controller";
+import {CommentsService} from "./Services/comments.service";
 
 
 @Module({
@@ -46,13 +48,13 @@ import {PostService} from "./Services/posts.service";
         }]),
     ],
     controllers: [AppController, LoginController, RegistrationController,
-        EmailController, DevicesController, BlogController, PostController],
+        EmailController, DevicesController, BlogController, PostController, CommentsController],
     providers: [{
         provide: APP_GUARD,
         useClass: ThrottlerGuard
     },
         AppService, LoginService, EmailService, DevicesService, UserService,
-    BlogService, PostService],
+    BlogService, PostService, CommentsService],
 })
 export class AppModule {
     constructor(private dataSource: DataSource) {}

@@ -52,6 +52,9 @@ export const blogsPS = async (dataSource, payload) => {
     const {pageNumber, pageSize, sortBy, searchNameTerm, sortDirection} = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
+    const count = await dataSource.query(`
+    SELECT * FROM "Blogs" where ("name" ilike $1) 
+    `,['%' + searchNameTerm + '%'])
 
     const result: blogsT[] = await dataSource.query(`
     SELECT "id", "name", "description", "websiteUrl", 
@@ -72,7 +75,7 @@ export const blogsPS = async (dataSource, payload) => {
         }
     })
 
-    const totalCount = blogs.length
+    const totalCount = count.length
     const pagesCount = Math.ceil(totalCount / pageSize)
 
     return {blogs, pagesCount, pageNumber, pageSize, totalCount}
@@ -83,6 +86,11 @@ export const postsPS = async (dataSource, payload, filter = null): Promise<any> 
 
     const offset = pageSize * pageNumber - pageSize
 
+    let count = await dataSource.query(`
+    SELECT COUNT(*) 
+    FROM "Posts" 
+    `)
+
     let result: postT[] = await dataSource.query(`
             SELECT "id", "title", "shortDescription", "content", 
             "blogId", "blogName","createdAt","likesCount",
@@ -91,7 +99,13 @@ export const postsPS = async (dataSource, payload, filter = null): Promise<any> 
             LIMIT $1 OFFSET $2`,
             [pageSize, offset])
 
-    if(filter) result = result.filter(post => post.blogId === filter)
+    if(filter) {
+        result = result.filter(post => post.blogId === filter)
+        count = await dataSource
+    .query(`
+    SELECT COUNT(*) FROM "Posts" 
+    where "blogId" = $1`, [filter])
+    }
 
     const posts = result.map(post => {
         return {
@@ -107,23 +121,31 @@ export const postsPS = async (dataSource, payload, filter = null): Promise<any> 
         }
     })
 
-    const totalCount = posts.length
+    const totalCount = +count[0].count
     const pagesCount = Math.ceil(totalCount / pageSize)
 
     return {posts, pagesCount, pageNumber, pageSize, totalCount}
 }
 
-export const commentsPS = async (CommentModel, payload, filter) => {
+export const commentsPS = async (dataSource, payload, postId) => {
     const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
-    const totalCount: number = await CommentModel.countDocuments(filter)
+
+    const offset = pageSize * pageNumber - pageSize
+    let count = await dataSource.query(`
+    SELECT COUNT(*) 
+    FROM "Comments" where "postId" = $1 
+    `, [postId])
+
+    let comments = await dataSource.query(`
+            SELECT * FROM "Comments"
+            where "postId" = $1
+            ORDER BY "${sortBy}" ${sortDirection}
+            LIMIT $2 OFFSET $3`,
+        [postId, pageSize, offset])
+
+    const totalCount = +count[0].count
     const pagesCount = Math.ceil(totalCount / pageSize)
 
-    const comments = await CommentModel
-        .find(filter, {projection: {_id: 0, postId: 0}})
-        .sort({[sortBy!]: sortDirection})
-        .skip(pageSize * pageNumber - pageSize)
-        .limit(pageSize)
-        .lean()
     return {comments, pagesCount, pageNumber, pageSize, totalCount}
 }
 

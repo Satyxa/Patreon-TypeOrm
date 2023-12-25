@@ -5,7 +5,7 @@ import {
     Delete,
     Get,
     Headers,
-    HttpCode,
+    HttpCode, HttpException,
     Param,
     Post,
     Put,
@@ -72,25 +72,27 @@ export class BlogController {
     async createPostForBlog(@Param('id') id: string, @Body() createdPostPayload: createdPostForBlogPayloadClass){
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         createdPostPayload.blogId = id
-        return await this.PostService.createPost(createdPostPayload)
+        return await this.PostService.createPost(createdPostPayload, 'for blog')
     }
 
     @UseGuards(BasicAuthGuard)
     @Put('sa/blogs/:blogId/posts/:postId')
+    @HttpCode(204)
     async updatePostForBlog(@Param() updatePostParams: updatePostForBlogPayload,
                             @Body() updatePostPayload: createdPostForBlogPayloadClass){
         updatePostPayload.blogId = updatePostParams.blogId
-        return await this.PostService.updatePost(updatePostParams.postId, updatePostPayload)
+        if(!updatePostParams.postId || !updatePostParams.blogId) throw new HttpException('Not Found', 404)
+        return await this.PostService.updatePost(updatePostParams.postId, updatePostPayload, 'for blog')
     }
     @UseGuards(BasicAuthGuard)
     @Delete('sa/blogs/:blogId/posts/:postId')
+    @HttpCode(204)
     async deletePostForBlog(@Param() updatePostParams: updatePostForBlogPayload){
         await this.PostService.deletePost(updatePostParams.postId, updatePostParams.blogId)
     }
     @UseGuards(BasicAuthGuard)
     @Get('sa/blogs')
     async SAGetAllBlogs(@Query() payload: queryPayload) {
-
         return await this.BlogService.getAllBlogs(payload)
     }
     @UseGuards(BasicAuthGuard)
@@ -104,7 +106,6 @@ export class BlogController {
     async SAGetPostsForBlog(@Param('id') id: string,
                           @Query() payload: queryPayload,
                           @Headers() headers) {
-        console.log(1)
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return await this.BlogService.getPostsForBlog(id, payload, headers)
     }

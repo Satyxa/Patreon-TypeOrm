@@ -130,11 +130,29 @@ export type commentsT = {
     reactions: reactionsT[]
 }
 
+export type commentsSQL = {
+    content: string
+    createdAt: string
+    postId: string
+    id: string
+    userId: string
+    userLogin: string
+    likesCount: number
+    dislikesCount: number
+    myStatus: 'Dislike' | 'Like' | 'None'
+}
+
 export type reactionsT = {
     postId: string
     userId: string,
     status: string,
     createdAt: string
+}
+export type commentsReactionsT = {
+    userId: string,
+    status: string,
+    createdAt: string
+    commentId: string
 }
 
 export type likesInfoT = {
