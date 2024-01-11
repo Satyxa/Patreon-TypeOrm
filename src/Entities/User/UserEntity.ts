@@ -1,31 +1,22 @@
 import {Column, Entity, PrimaryGeneratedColumn} from "typeorm";
 
-@Entity({name: 'users'})
-export class Users {
-    @PrimaryGeneratedColumn()
+
+@Entity()
+export class User {
+    @PrimaryGeneratedColumn("uuid")
     id: string
-
     @Column()
-    username: string
-
+    login: string
     @Column()
     email: string
-
-    @Column()
-    passwordHash: string
-
     @Column()
     createdAt: string
-
-    @Column()
-    confirmationCode: string
-
     @Column()
     expirationDate: string
-
     @Column()
     isConfirmed: boolean
-
     @Column()
-    recoveryCode: string
+    passwordHash: string
+    @Column()
+    createdAt: Date
 }
