@@ -53,6 +53,7 @@ export class createdPostPayloadClass {
     @Transform(param => param.value.trim())
     @Length(1, 1000)
     content: string
+
 }
 
 export class createdPostForBlogPayloadClass {

@@ -1,15 +1,21 @@
 import {CanActivate, ExecutionContext, Injectable, UnauthorizedException} from "@nestjs/common";
 import {getResultByToken} from "../Utils/authentication";
-import {InjectDataSource} from "@nestjs/typeorm";
-import {DataSource} from "typeorm";
+import {InjectDataSource, InjectRepository} from "@nestjs/typeorm";
+import {DataSource, Repository} from "typeorm";
 import {CheckEntityId} from "../Utils/checkEntityId";
+import {User} from "../Entities/User/UserEntity";
+import {Device} from "../Entities/DeviceEntity";
 // import {InjectModel} from "@nestjs/mongoose";
 // import {Model} from "mongoose";
 @Injectable()
 export class AuthGuard implements CanActivate {
-    constructor(@InjectDataSource() protected dataSource: DataSource) {}
+    constructor(@InjectRepository(User)
+                protected UserRepository: Repository<User>,
+                @InjectRepository(Device)
+                protected DeviceRepository: Repository<Device>) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+
         const req = context.switchToHttp().getRequest()
         if(!req.headers.authorization) throw new UnauthorizedException()
 
@@ -20,12 +26,9 @@ export class AuthGuard implements CanActivate {
         const tokenPayload = await getResultByToken(token)
         if(!tokenPayload) throw new UnauthorizedException()
         const {userId, deviceId, iat} = tokenPayload
-        const foundUser = await CheckEntityId.checkUserId(this.dataSource, userId)
+        const foundUser = await CheckEntityId.checkUserId(this.UserRepository, userId)
 
-        const existDevice = await this.dataSource.query(`
-        SELECT * FROM "Sessions"
-        where "deviceId" = $1 and "userId" = $2
-        `, [deviceId, userId])
+        const existDevice = await this.DeviceRepository.findOneBy({deviceId, userId})
 
         // const correctActiveDate = foundUser.sessions.some(date => date.lastActiveDate === iat.toString())
         if(existDevice){
@@ -51,7 +54,6 @@ export class BasicAuthGuard implements CanActivate {
             const login = data.split(':')[0]
             const password = data.split(':')[1]
             if (login === 'admin' && password === 'qwerty') {
-                console.log('basic guard success')
                 return true
             }
             else throw new UnauthorizedException()

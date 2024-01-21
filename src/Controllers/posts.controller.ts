@@ -78,7 +78,6 @@ export class PostController {
     // LIKES FOR POSTT
 
 
-    // COMMENTS
     @Get(':id/comments')
     async getAllCommentsForPost(@Param('id') id: string,
                                 @Query() payload: queryPayload,
@@ -95,6 +94,4 @@ export class PostController {
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
         return this.PostService.createCommentForPost(id, CommentContentPayload.content, req.userId)
     }
-
-    // COMMENTS
 }

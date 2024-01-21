@@ -7,10 +7,8 @@ import {DataSource} from "typeorm";
 
 @Controller('auth')
 export class RegistrationController {
-    constructor(private readonly UserService: UserService,
-                @InjectDataSource() protected dataSource: DataSource) {
+    constructor(private readonly UserService: UserService) {
     }
-
     @Post('registration')
     @HttpCode(204)
     async registration(@Body() createUserPayload: createUserPayloadClass) {

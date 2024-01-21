@@ -1,13 +1,4 @@
-import * as uuid from "uuid";
 
-export type userT33 = {
-    id: string
-    email: string
-    login: string
-    passwordHash: string
-    passwordSalt: string
-    createdAt: string
-}
 export type userT = {
     id: string
     email: string
@@ -17,9 +8,11 @@ export type userT = {
     sessions: SessionsType[]
 }
 
-export type errorField = {
-    field: string
-    message: string
+export interface FoundedUser {
+    id: string
+    recoveryCode: string
+    AccountData: AccountDataType
+    EmailConformation: EmailConfirmationType
 }
 
 export interface UserSQL {
@@ -57,62 +50,6 @@ export type SessionsType = {
     lastActiveDate: string
 }
 
-
-export type UserAccountDBType = {
-    id: string
-    AccountData: AccountDataType
-    EmailConfirmation: EmailConfirmationType
-    sessions: SessionsType[]
-    recoveryCode: string
-}
-
-export type userLoginT = {
-    password: string
-    loginOrEmail: string
-}
-
-export type userViewT = {
-    id: string,
-    AccountData: AccountDataType,
-    EmailConfirmation: EmailConfirmationType
-}
-
-export type pagSortT = {
-    pageNumber: number,
-    pageSize: number,
-    sortBy: string,
-    searchNameTerm: string,
-    totalCount: number,
-    pagesCount: number
-}
-
-
-export type RateLimiterT = {
-    ip: string
-    date: Date
-    url: string
-}
-
-export type postT = {
-    id: string
-    title: string
-    shortDescription: string
-    content: string
-    blogId: string
-    blogName: string
-    createdAt: string
-    likesCount: number
-    dislikesCount: number
-    myStatus: 'Like' | 'Dislike' | 'None'
-}
-
-export type extendedLikesInfoT = {
-    likesCount: number,
-    dislikesCount: number,
-    myStatus: string,
-    newestLikes: newestLikesT[]
-}
-
 export type newestLikesT = {
     _id?: string,
     addedAt: string,
@@ -135,15 +72,13 @@ export type commentsSQL = {
     createdAt: string
     postId: string
     id: string
-    userId: string
-    userLogin: string
-    likesCount: number
-    dislikesCount: number
-    myStatus: 'Dislike' | 'Like' | 'None'
+    CommentatorInfo: commentatorInfoT
+    LikesInfo: likesInfoT
+    deleted: boolean
 }
 
 export type reactionsT = {
-    postId: string
+    entityId: string
     userId: string,
     status: string,
     createdAt: string
@@ -152,7 +87,7 @@ export type commentsReactionsT = {
     userId: string,
     status: string,
     createdAt: string
-    commentId: string
+    entityId: string
 }
 
 export type likesInfoT = {
@@ -173,45 +108,6 @@ export type blogsT = {
     websiteUrl: string
     isMembership: boolean
     createdAt: string
-}
-
-export type videoT = {
-    id: number
-    title: string
-    author: string
-    canBeDownloaded: boolean
-    minAgeRestriction: number | null
-    createdAt: string
-    publicationDate: string
-    availableResolutions: Array<'P144' | 'P240' | 'P360' | 'P480' | 'P720' | 'P1080' | 'P1440' | 'P2160'>
-}
-
-export type updatedVideoType = {
-    id: number,
-    title: string,
-    author: string,
-    canBeDownloaded: boolean,
-    minAgeRestriction: number | null,
-    createdAt: string,
-    publicationDate: string,
-    availableResolutions: Array<string>
-}
-
-export type ValidationErrorType = {
-    message: string
-    field: string
-}
-
-export type rateLimitT = {
-    ip: string
-    url: string
-    date: string
-}
-
-export type createUserPayloadType = {
-    login: string
-    email: string
-    password: string
 }
 
 export type ErrorsType = {

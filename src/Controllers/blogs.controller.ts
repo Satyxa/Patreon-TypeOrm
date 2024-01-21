@@ -18,11 +18,9 @@ import {PostService} from "../Services/posts.service";
 import {BasicAuthGuard} from "../Middleware/AuthGuard";
 import {
     createBlogPayloadClass,
-    createdPostForBlogPayloadClass,
-    createdPostPayloadClass,
+    createdPostForBlogPayloadClass, createdPostPayloadClass,
     updatePostForBlogPayload
 } from "../Types/classesTypes";
-import {CheckEntityId} from "../Utils/checkEntityId";
 
 @Controller()
 export class BlogController {
@@ -60,12 +58,13 @@ export class BlogController {
             [{message: 'id is required', field: 'id'}])
         return await this.BlogService.updateBlog(id, updateBlogPayload)
     }
-    @Get('blogs/:id/posts')
-    async getPostsForBlog(@Param('id') id: string,
+    @Get('blogs/:blogId/posts')
+    async getPostsForBlog(@Param('blogId') blogId: string,
                           @Query() payload: queryPayload,
                           @Headers() headers) {
-        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-        return await this.BlogService.getPostsForBlog(id, payload, headers)
+        if(!blogId) throw new BadRequestException(
+            [{message: 'blogId is required', field: 'blogId'}])
+        return await this.BlogService.getPostsForBlog(blogId, payload, headers)
     }
     @UseGuards(BasicAuthGuard)
     @Post('sa/blogs/:id/posts')
@@ -102,11 +101,40 @@ export class BlogController {
         return await this.BlogService.getOneBlog(id)
     }
     @UseGuards(BasicAuthGuard)
-    @Get('sa/blogs/:id/posts')
-    async SAGetPostsForBlog(@Param('id') id: string,
+    @Get('sa/blogs/:blogId/posts')
+    async SAGetPostsForBlog(@Param('blogId') blogId: string,
                           @Query() payload: queryPayload,
                           @Headers() headers) {
-        if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
-        return await this.BlogService.getPostsForBlog(id, payload, headers)
+        if(!blogId) throw new BadRequestException(
+            [{message: 'blogId is required', field: 'blogId'}])
+        return await this.BlogService.getPostsForBlog(blogId, payload, headers)
+    }
+
+    @UseGuards(BasicAuthGuard)
+    @Post('sa/blogs/:blogId/posts')
+    async SACreatePostsForBlog(@Body() createdPostPayload: createdPostForBlogPayloadClass,
+                               @Param('blogId') blogId: string) {
+        createdPostPayload.blogId = blogId
+        return await this.PostService.createPost(createdPostPayload)
+    }
+
+    @UseGuards(BasicAuthGuard)
+    @Put('sa/blogs/:blogId/posts/:postId')
+    @HttpCode(204)
+    async SAUpdatePostsForBlog(@Param() paramPayload,
+                     @Body() updatePostPayload: createdPostForBlogPayloadClass) {
+        if(!paramPayload.blogId || paramPayload.postId) throw new BadRequestException(
+            [{message: 'id is required', field: 'id'}])
+        updatePostPayload.blogId = paramPayload.blogId
+        return await this.PostService.updatePost(paramPayload.postId, updatePostPayload)
+    }
+
+    @UseGuards(BasicAuthGuard)
+    @Delete('sa/blogs/:blogId/posts/:postId')
+    @HttpCode(204)
+    async SADeletePostsForBlog(@Param() paramPayload) {
+        if(!paramPayload.blogId || paramPayload.postId) throw new BadRequestException(
+            [{message: 'id is required', field: 'id'}])
+        return await this.PostService.deletePost(paramPayload.postId, paramPayload.blogId)
     }
 }

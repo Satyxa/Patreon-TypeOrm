@@ -24,6 +24,6 @@ async function Server() {
       throw new BadRequestException(errorsForRes)
   }}))
   app.useGlobalFilters(new HttpExceptionFilter())
-  await app.listen(1667);
+  await app.listen(1668);
 }
 Server();

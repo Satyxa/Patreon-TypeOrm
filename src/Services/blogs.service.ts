@@ -1,77 +1,97 @@
-import {HttpCode, HttpException, Injectable} from "@nestjs/common";
-import {InjectModel} from "@nestjs/mongoose";
-import {FilterQuery, Model} from "mongoose";
-import {blogsT, postT} from "../Types/types";
-import {blogsPS, getValuesPS, postsPS} from "../Utils/PaginationAndSort";
+import {Injectable} from "@nestjs/common";
+import {blogsT} from "../Types/types";
+import {blogsPS, postsPS} from "../Utils/PaginationAndSort";
 import * as uuid from 'uuid'
 import {EntityUtils} from "../Utils/EntityUtils";
-import {getResultByToken, getUserId} from "../Utils/authentication";
-import {InjectDataSource} from "@nestjs/typeorm";
-import {DataSource} from "typeorm";
+import {getUserId} from "../Utils/authentication";
+import {InjectDataSource, InjectRepository} from "@nestjs/typeorm";
+import {DataSource, Repository} from "typeorm";
 import {CheckEntityId} from "../Utils/checkEntityId";
 import {EntityWithReactions} from "../Utils/EntityWithReactions";
+import {Blog, createBlog} from "../Entities/BlogEntity";
+import {Post} from "../Entities/Posts/PostEntity";
+import {ExtendedLikesInfo} from "../Entities/Posts/ExtendedLikesInfoEntity";
+import {NewestLikes} from "../Entities/Posts/NewestLikesEntity";
+import {PostReactions} from "../Entities/Posts/PostReactionsEntity";
+
 @Injectable()
 export class BlogService {
-    constructor(@InjectDataSource() protected dataSource: DataSource) {}
+    constructor(@InjectRepository(Blog)
+                protected BlogRepository: Repository<Blog>,
+                @InjectRepository(Post)
+                protected PostRepository: Repository<Post>,
+                @InjectRepository(ExtendedLikesInfo)
+                protected ExtendedLikesInfoRepository: Repository<ExtendedLikesInfo>,
+                @InjectRepository(NewestLikes)
+                protected NewestLikesRepository: Repository<NewestLikes>,
+                @InjectRepository(PostReactions)
+                protected PostReactionsRepository: Repository<PostReactions>) {
+    }
+
     deleteAllBlogs() {
-        return this.dataSource
-            .query(`DELETE FROM "Blogs"`)
+        return this.BlogRepository
+            .update({}, {deleted: true})
     }
 
     async getAllBlogs(payload) {
-        const {blogs, pagesCount, pageNumber,
-            pageSize, totalCount} = await blogsPS(this.dataSource, payload)
+        const {
+            blogs, pagesCount, pageNumber,
+            pageSize, totalCount
+        } = await blogsPS(this.BlogRepository, payload)
         return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: blogs})
     }
+
     async getOneBlog(id) {
-        return await CheckEntityId.checkBlogId(this.dataSource, id, 'for blog')
+        return await CheckEntityId
+            .checkBlogId(this.BlogRepository, id, 'for blog')
     }
 
     async createBlog(name, description, websiteUrl): Promise<blogsT> {
         const id = uuid.v4()
         const createdAt = new Date().toISOString()
 
-        await this.dataSource.query(`
-        INSERT INTO "Blogs" ("id", "name",
-        "description", "websiteUrl", 
-        "isMembership", "createdAt")
-        VALUES ($1, $2, $3, $4, $5, $6)`,
-        [id, name, description,
-        websiteUrl, false, createdAt])
+        const blog: createBlog =
+            new createBlog(id, name, description, websiteUrl, createdAt)
 
-        return EntityUtils.createBlog(id, name, description,
-                            websiteUrl, createdAt)
+        await this.BlogRepository.save(blog)
+
+        const {deleted, ...viewBlog} = blog
+        return viewBlog
     }
-    async deleteBlog(id){
-        await CheckEntityId.checkBlogId(this.dataSource, id, 'for blog')
-        await this.dataSource.query(`
-        DELETE FROM "Blogs" where id = $1
-        `, [id])
+
+    async deleteBlog(id) {
+        await CheckEntityId
+            .checkBlogId(this.BlogRepository, id, 'for blog')
+        await this.BlogRepository
+            .update({id}, {deleted: true})
     }
 
     async updateBlog(id, updateBlogPayload) {
         const {name, description, websiteUrl} = updateBlogPayload
-        await CheckEntityId.checkBlogId(this.dataSource, id, 'for blog')
+        await CheckEntityId
+            .checkBlogId(this.BlogRepository, id, 'for blog')
 
-        await this.dataSource.query(`
-        UPDATE "Blogs" SET name = $1,
-        description = $2, "websiteUrl" = $3`,
-        [name, description, websiteUrl])
+        await this.BlogRepository
+            .update({id}, {name, description, websiteUrl})
     }
 
     async getPostsForBlog(id, payload, headers) {
         const userId = await getUserId(headers)
         await CheckEntityId
-            .checkBlogId(this.dataSource, id, 'for post')
-        console.log(2)
-        let {posts, pagesCount, pageNumber, pageSize, totalCount} = await postsPS(this.dataSource, payload, id)
-        const {reactions, newestLikes} = await EntityWithReactions.getPostsInfo(this.dataSource)
-        console.log(3)
-        const viewPosts = posts.map(post =>
-            EntityUtils.GetPost(post, userId, reactions, newestLikes)
-        )
-        console.log(4)
-        return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: viewPosts})
-    }
+            .checkBlogId(this.BlogRepository, id, 'for post')
 
+        const {posts, pagesCount, pageNumber, pageSize, totalCount} =
+            await postsPS(this.PostRepository, payload, id)
+
+        const {reactions, newestLikes, extendedLikesInfo} =
+            await EntityWithReactions
+                .getPostsInfo(
+                    this.NewestLikesRepository,
+                    this.ExtendedLikesInfoRepository,
+                    this.PostReactionsRepository)
+        const items = posts.map(post =>
+            EntityUtils.GetPost(post, newestLikes, reactions, extendedLikesInfo, userId))
+
+        return ({pagesCount, page: +pageNumber, pageSize, totalCount, items})
+    }
 }

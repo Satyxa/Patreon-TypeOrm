@@ -1,16 +1,19 @@
 import * as uuid from "uuid";
 import {
     commentsReactionsT,
-    commentsSQL,
-    commentsT,
     newestLikesT,
-    postT,
     reactionsT,
-    UserAccountDBType,
-    userViewT
 } from "../Types/types";
 import bcrypt from "bcrypt";
-import {DataSource} from "typeorm";
+import {UnauthorizedException} from "@nestjs/common";
+import {createPost} from "../Entities/Posts/PostEntity";
+import {createELI} from "../Entities/Posts/ExtendedLikesInfoEntity";
+import {createLI} from "../Entities/Comment/LikesInfoEntity";
+import {createAC} from "../Entities/User/AccountDataEntity";
+import {createEC} from "../Entities/User/EmailConfirmationEntity";
+import {createUser} from "../Entities/User/UserEntity";
+import {createCI} from "../Entities/Comment/CommentatorInfoEntity";
+import {createComment} from "../Entities/Comment/CommentEntity";
 
 export const EntityUtils = {
     CreateUser: async (login, email, password) => {
@@ -20,109 +23,86 @@ export const EntityUtils = {
         const expirationDate = new Date().toISOString()
         const salt = await bcrypt.genSalt(10)
         const hash = await bcrypt.hash(password, salt)
-        const User = {
-            id,
-            recoveryCode: ''
-        }
-        const AccountData = {
-            userId: id,
-            username: login,
-            email,
-            passwordHash: hash,
-            createdAt
-        }
-        const EmailConfirmation = {
-            userId: id,
-            confirmationCode,
-            expirationDate,
-            isConfirmed: false
-        }
-        const ViewUser = {
-            id: User.id,
-            email: AccountData.email,
-            login: AccountData.username,
-            createdAt: AccountData.createdAt
-        }
 
-        return {AccountData, EmailConfirmation, ViewUser}
+        const AccountData: createAC = new createAC(hash, login, email, createdAt, id)
+        const EmailConfirmation: createEC = new createEC(expirationDate, confirmationCode, id)
+        const User: createUser = new createUser(id, AccountData, EmailConfirmation)
+
+        const ViewUser = {id, email, login, createdAt}
+
+        return {User, AccountData, EmailConfirmation, ViewUser}
     },
-    GetPost: (post: postT, userId, reactions, newestLikes): any => {
 
-        const newestLikesForPost = newestLikes.filter(el => el.postId === post.id).reverse()
-        const reactionsForPost = reactions.filter(el => el.postId === post.id)
+    CreateComment: async (content, postId, userId, userLogin, commentId, createdAt) => {
+        const LikesInfo: createLI = new createLI(commentId)
+        const CommentatorInfo: createCI = new createCI(userId, userLogin, commentId)
+        const Comment: createComment = new createComment(commentId, content,
+            CommentatorInfo, LikesInfo, createdAt, postId)
+
+        return {Comment, CommentatorInfo, LikesInfo}
+    },
+    GetPost: (post, newestLikes, reactions, extendedLikesInfo, userId): any => {
+        const NLForPost = newestLikes.filter(el => el.postId.postId === post.id)
+        const REACTForPost = reactions.filter(el => el.entityId === post.id)
+        const ELIForPost = extendedLikesInfo.filter(el => el.postId === post.id)
 
         return {
             id: post.id,
             title: post.title,
             shortDescription: post.shortDescription,
             content: post.content,
-            blogId: post.blogId,
+            blogId: post.blog.id,
             blogName: post.blogName,
             createdAt: post.createdAt,
             extendedLikesInfo: {
-                likesCount: +post.likesCount,
-                dislikesCount: +post.dislikesCount,
-                myStatus: reactionsForPost.reduce((ac: string, r: reactionsT) => {
-                    if (r.userId === userId && r.postId === post.id ) {
-                        return r.status
-                    }
+                likesCount: ELIForPost[0] ? ELIForPost[0].likesCount : 0,
+                dislikesCount: ELIForPost[0] ? ELIForPost[0].dislikesCount : 0,
+                myStatus: REACTForPost.reduce((ac: string, r: reactionsT) => {
+                    if (r.userId === userId &&
+                        r.entityId === post.id) return r.status
+
                     return ac
                 }, 'None'),
-                newestLikes: newestLikesForPost.map((el: newestLikesT, i: number) => {
-                    if (i < 3) {
-                        return {
+                newestLikes: NLForPost.map((el: newestLikesT, i: number) => {
+                    if (i < 3) return {
                             userId: el.userId,
                             addedAt: el.addedAt,
                             login: el.login
                         };
-                    }
                     return
                 }).splice(0, 3)
             }
         }
     },
-    CreatePost: async (title: string, shortDescription: string,
-                 content: string, blogId: string, blogName: string,
-                 dataSource: DataSource) => {
+    CreatePost: async (PostRepository, ExtendedLikesInfoRepository,
+                       title: string, shortDescription: string,
+                       content: string, blog, blogName: string) => {
         const createdAt = new Date().toISOString()
         const id = uuid.v4()
-        await dataSource.query(`
-        INSERT INTO "Posts" ("id", "title", "shortDescription",
-                "content", "blogId", "blogName", "createdAt",
-                "likesCount", "dislikesCount", "myStatus")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-            [id, title, shortDescription, content, blogId,
-            blogName, createdAt, 0, 0, 'None'])
-        return {
-            id,
-            title,
-            shortDescription,
-            content,
-            blogId,
-            blogName,
-            createdAt,
-            extendedLikesInfo: {
-                likesCount: 0,
-                dislikesCount: 0,
-                myStatus: 'None',
-                newestLikes: []
-            }
-        }
+
+        const ExtendedLikesInfo: createELI = new createELI(id)
+        const Post: createPost = new createPost(id, title, shortDescription,
+            content, createdAt, blogName, blog, ExtendedLikesInfo)
+
+        await ExtendedLikesInfoRepository.save(ExtendedLikesInfo)
+        await PostRepository.save(Post)
+
+        return EntityUtils.GetPost(Post, [], [], [], '')
     },
-    createViewComment: (comment: commentsSQL, userId: string, reactions: commentsReactionsT[]) => {
+    createViewComment: (comment, userId: string, reactions: commentsReactionsT[]) => {
         return {
             id: comment.id,
             content: comment.content,
             createdAt: comment.createdAt,
             commentatorInfo: {
-                userId: comment.userId,
-                userLogin: comment.userLogin
+                userId: comment.CommentatorInfo.userId,
+                userLogin: comment.CommentatorInfo.userLogin
             },
             likesInfo: {
-                likesCount: +comment.likesCount,
-                dislikesCount: +comment.dislikesCount,
+                likesCount: comment.LikesInfo.likesCount,
+                dislikesCount: comment.LikesInfo.dislikesCount,
                 myStatus: reactions.reduce((ac, r) => {
-                    if (r.userId === userId && r.commentId === comment.id) {
+                    if (r.userId === userId && r.entityId === comment.id) {
                         ac = r.status;
                         return ac
                     }
@@ -131,29 +111,23 @@ export const EntityUtils = {
             }
         }
     },
-    createReaction: (userId: string, status: string) => {
-        return {
-            userId,
-            status,
-            createdAt: new Date().toISOString()
-        }
+    checkTokenInBL: async (TokenBlackListRepository, refreshToken) => {
+        const isTokenInBL = await TokenBlackListRepository
+            .createQueryBuilder("t")
+            .where("t.token = :token", {token: refreshToken})
+            .getOne()
+        if(isTokenInBL) throw new UnauthorizedException()
+        else await TokenBlackListRepository.save({
+            token: refreshToken
+        })
     },
-    createNewestLike: (userId: string, login: string) => {
-        return {
-            userId,
-            login,
-            addedAt: new Date().toISOString()
-        }
+
+    getAllDevices: async (DeviceRepository, userId) => {
+        return await DeviceRepository
+            .createQueryBuilder("d")
+            .select(["d.deviceId", "d.lastActiveDate", "d.ip", "d.title"])
+            .where("d.userId = :userId", {userId})
+            .getMany()
     },
-    createBlog: (id, name, description, websiteUrl,
-                 createdAt) => {
-        return {
-            id,
-            name,
-            description,
-            websiteUrl,
-            isMembership: false,
-            createdAt
-        }
-    }
+
 }

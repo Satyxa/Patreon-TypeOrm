@@ -1,55 +1,70 @@
-import {InjectDataSource} from "@nestjs/typeorm";
-import {DataSource} from "typeorm";
+import {InjectDataSource, InjectRepository} from "@nestjs/typeorm";
+import {DataSource, Repository} from "typeorm";
 import {BadRequestException, HttpException, UnauthorizedException} from "@nestjs/common";
 import {EmailConfirmationType, SessionsType} from "../Types/types";
 import {getResultByToken} from "../Utils/authentication";
+import {Device} from "../Entities/DeviceEntity";
+import {EntityUtils} from "../Utils/EntityUtils";
 
 export class DevicesService {
-    constructor(@InjectDataSource() protected dataSource: DataSource) {}
+    constructor(@InjectRepository(Device)
+                private readonly DeviceRepository: Repository<Device>,
+                @InjectDataSource() private readonly dataSource: DataSource) {}
 
     async deleteAll(){
-        return await this.dataSource.query(`
-        DELETE FROM "Sessions"
-        `)
+         await this.dataSource.query(`
+         UPDATE "device" SET "deleted" = true
+         WHERE "deleted" = false`)
+        return
     }
 
     async getDevices(refreshToken){
         if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
         const tokenPayload: any = getResultByToken(refreshToken)
 
-        const sessions: SessionsType[] = await this.dataSource.query(`
-        SELECT "ip", "deviceId", "title", "lastActiveDate" 
-        FROM "Sessions" 
-        where "userId" = $1`, [tokenPayload.userId])
+        const sessions = await EntityUtils
+            .getAllDevices(this.DeviceRepository, tokenPayload.userId)
 
         if(!sessions.length) throw new UnauthorizedException()
         return sessions
     }
 
     async deleteDevices(refreshToken) {
+        if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
+        const tokenPayload: any = getResultByToken(refreshToken)
+
+        const {deviceId} = tokenPayload
+
+        const device = await this.DeviceRepository
+            .createQueryBuilder("d")
+            .where("d.deviceId = :deviceId", {deviceId})
+            .getOne()
+
+        if(!device) throw new HttpException('NOT FOUND', 404)
+
+        await this.DeviceRepository
+            .createQueryBuilder()
+            .delete()
+            .from("Device")
+            .where("userId = :userId", {userId: tokenPayload.userId})
+            .andWhere("deviceId != :deviceId", {deviceId})
+            .execute()
+    }
+
+    async deleteDevice(deviceId, refreshToken){
         if (!getResultByToken(refreshToken)) throw new UnauthorizedException()
         const tokenPayload = getResultByToken(refreshToken)
         if (!tokenPayload) throw new UnauthorizedException()
 
-        const {deviceId} = tokenPayload
-        await this.dataSource.query(
-            `DELETE FROM "Sessions" 
-        where "userId" = $1 AND "deviceId" != $2`,
-            [tokenPayload.userId, deviceId])
-    }
+        const device = await this.DeviceRepository
+            .createQueryBuilder("d")
+            .where("d.deviceId = :deviceId", {deviceId})
+            .getOne()
 
-    async deleteDevice(deviceId, refreshToken){
-        if(!getResultByToken(refreshToken)) throw new UnauthorizedException()
-        const tokenPayload: any = getResultByToken(refreshToken)
+        if(!device) throw new HttpException('NOT FOUND', 404)
+        if(tokenPayload.userId !== device.userId) throw new HttpException('FORBIDDEN', 403)
 
-        const device = await this.dataSource.query(`
-        SELECT * FROM "Sessions" where "deviceId" = $1`,
-            [deviceId])
-
-        if(!device.length) throw new HttpException('NOT FOUND', 404)
-        if(tokenPayload.userId !== device[0].userId) throw new HttpException('FORBIDDEN', 403)
-        await this.dataSource.query(
-            `DELETE FROM "Sessions" where "deviceId" = $1`,
-            [deviceId])
+        await this.DeviceRepository
+            .delete({userId: tokenPayload.userId, deviceId})
     }
 }

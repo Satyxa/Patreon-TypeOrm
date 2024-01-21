@@ -1,0 +1,24 @@
+import {Column, Entity, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn} from "typeorm";
+import {Post} from "./PostEntity";
+
+@Entity()
+export class PostReactions {
+    @PrimaryGeneratedColumn("uuid")
+    reactionId: string
+    @Column({type: 'varchar'})
+    userId: string
+    @Column("uuid")
+    entityId: string
+    @Column({type: 'varchar'})
+    status: 'Like' | 'Dislike'
+    @Column({type: "varchar"})
+    createdAt: string
+}
+
+export class createPR {
+    constructor(public reactionId: string,
+                public userId: string,
+                public entityId: string,
+                public status: string,
+                public createdAt: string) {}
+}

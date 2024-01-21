@@ -1,5 +1,5 @@
-import {FilterQuery, SortOrder} from "mongoose";
-import {blogsT, commentsT, extendedLikesInfoT, newestLikesT, postT, UserAccountDBType, userT} from "../Types/types";
+import {Brackets} from "typeorm";
+import {deleted} from "../Constants";
 
 export const getValuesPS = (payload) => {
     let {pageNumber, pageSize, sortBy, searchLoginTerm, searchEmailTerm, sortDirection, searchNameTerm} = payload
@@ -14,135 +14,118 @@ export const getValuesPS = (payload) => {
         searchLoginTerm: !searchLoginTerm ? !searchEmailTerm ? '' : '$#@' : searchLoginTerm,
         searchEmailTerm: !searchEmailTerm ? !searchLoginTerm ? '' : '$#@' : searchEmailTerm,
         searchNameTerm: searchNameTerm ?? '',
-        sortDirection: sortDirection ?? 'desc',
+        sortDirection: sortDirection ?? 'DESC' as 'ASC' | 'DESC' | undefined,
     }
 }
 
-export const usersPS = async (dataSource, payload) => {
-
-    let {
-        pageNumber, pageSize, sortBy, searchLoginTerm,
-        searchEmailTerm, sortDirection
-    } = getValuesPS(payload)
+export const usersPS = async (UserRepository, payload) => {
+    let {pageNumber, pageSize, sortBy, searchLoginTerm,
+         searchEmailTerm, sortDirection} = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
 
-    const count = await dataSource.query(`
-    SELECT COUNT(*) 
-    FROM "Users" 
-    where (username ilike $1 OR email ilike $2)`,
+    const query = await UserRepository
+        .createQueryBuilder("u")
+        .leftJoinAndSelect("u.AccountData", "ac")
+        .select(["u.id", "ac.login", "ac.email", "ac.createdAt", "u.deleted"])
+        .where("u.deleted = :deleted", {deleted})
+        .andWhere(new Brackets(qb => {
+            qb.where(`ac.email ilike :searchEmailTerm`, { searchEmailTerm:`%${searchEmailTerm}%` })
+                .orWhere(`ac.login ilike :searchLoginTerm`, { searchLoginTerm:`%${searchLoginTerm}%` })
+        }))
 
-        ['%' + searchLoginTerm + '%', '%' + searchEmailTerm + '%'])
-    console.log(sortBy)
-    const users = await dataSource.query(`
-    SELECT "id", "createdAt", "username" as "login", "email" FROM "Users"
-    where (username ilike $3 OR email ilike $4) 
-    ORDER BY "${sortBy}" ${sortDirection}
-    LIMIT $1 OFFSET $2`,
+    const totalCount = await query.getCount()
 
-        [pageSize, offset, '%' + searchLoginTerm + '%', '%' + searchEmailTerm + '%'])
+    const response = await query
+        .orderBy(`ac.${sortBy}`, `${sortDirection.toUpperCase()}`)
+        .limit(pageSize)
+        .offset(offset)
+        .getMany()
 
-    const totalCount = +count[0].count
-    const pagesCount = Math.ceil(totalCount / pageSize)
-
-    return {users, pagesCount, pageNumber, pageSize, totalCount}
-}
-
-export const blogsPS = async (dataSource, payload) => {
-    const {pageNumber, pageSize, sortBy, searchNameTerm, sortDirection} = getValuesPS(payload)
-
-    const offset = pageSize * pageNumber - pageSize
-    const count = await dataSource.query(`
-    SELECT * FROM "Blogs" where ("name" ilike $1) 
-    `,['%' + searchNameTerm + '%'])
-
-    const result: blogsT[] = await dataSource.query(`
-    SELECT "id", "name", "description", "websiteUrl", 
-    "createdAt","isMembership" FROM "Blogs"
-    where ("name" ilike $3) 
-    ORDER BY "${sortBy}" ${sortDirection}
-    LIMIT $1 OFFSET $2`,
-        [pageSize, offset, '%' + searchNameTerm + '%'])
-
-    const blogs = result.map((blog) => {
+    const users = response.map(u => {
         return {
-            id: blog.id,
-            name: blog.name,
-            description: blog.description,
-            websiteUrl: blog.websiteUrl,
-            isMembership: blog.isMembership,
-            createdAt: blog.createdAt,
+            id: u.id,
+            login: u.AccountData.login,
+            email: u.AccountData.email,
+            createdAt: u.AccountData.createdAt,
         }
     })
 
-    const totalCount = count.length
     const pagesCount = Math.ceil(totalCount / pageSize)
+    return {users, pagesCount, pageNumber, pageSize, totalCount}
+}
+
+export const blogsPS = async (BlogRepository, payload) => {
+    const {pageNumber, pageSize, sortBy, searchNameTerm, sortDirection} = getValuesPS(payload)
+
+    const offset = pageSize * pageNumber - pageSize
+
+    const totalCount = await BlogRepository
+        .createQueryBuilder("b")
+        .where("b.name ilike :searchNameTerm", { searchNameTerm:`%${searchNameTerm}%` })
+        .andWhere("b.deleted = :deleted", {deleted})
+        .getCount()
+
+    const pagesCount = Math.ceil(totalCount / pageSize)
+
+    const blogs = await BlogRepository
+        .createQueryBuilder("b")
+        .select(["b.name", "b.id", "b.description", "b.websiteUrl",
+            "b.isMembership", "b.createdAt"])
+        .where("b.name ilike :searchNameTerm", { searchNameTerm:`%${searchNameTerm}%` })
+        .andWhere("b.deleted = :deleted", {deleted})
+        .orderBy(`b.${sortBy}`, `${sortDirection.toUpperCase()}`)
+        .limit(pageSize)
+        .offset(offset)
+        .getMany()
 
     return {blogs, pagesCount, pageNumber, pageSize, totalCount}
 }
 
-export const postsPS = async (dataSource, payload, filter = null): Promise<any> => {
+export const postsPS = async (PostRepository, payload, filter = null): Promise<any> => {
     const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
 
-    let count = await dataSource.query(`
-    SELECT COUNT(*) 
-    FROM "Posts" `)
+    let query = await PostRepository
+        .createQueryBuilder("p")
+        .leftJoinAndSelect("p.blog", "b")
+        .where("p.deleted = :deleted", {deleted})
 
-    let result: postT[] = await dataSource.query(`
-            SELECT "id", "title", "shortDescription", "content", 
-            "blogId", "blogName","createdAt","likesCount",
-            "dislikesCount", "myStatus" FROM "Posts"
-            ORDER BY "${sortBy}" ${sortDirection}
-            LIMIT $1 OFFSET $2`,
-            [pageSize, offset])
+    if(filter) query.andWhere(`b.id = :filter`, {filter})
 
-    if(filter) {
-        result = result.filter(post => post.blogId === filter)
-        count = await dataSource
-    .query(`
-    SELECT COUNT(*) FROM "Posts" 
-    where "blogId" = $1`, [filter])
-    }
+    const posts = await query
+        .orderBy(`p.${sortBy}`, `${sortDirection.toUpperCase()}`)
+        .limit(pageSize)
+        .offset(offset)
+        .getMany()
 
-    const posts = result.map(post => {
-        return {
-            id: post.id,
-            title: post.title,
-            shortDescription: post.shortDescription,
-            content: post.content,
-            blogId: post.blogId,
-            blogName: post.blogName,
-            createdAt: post.createdAt,
-            likesCount: post.likesCount,
-            dislikesCount: post.dislikesCount,
-        }
-    })
-
-    const totalCount = +count[0].count
+    const totalCount = await query.getCount()
     const pagesCount = Math.ceil(totalCount / pageSize)
 
     return {posts, pagesCount, pageNumber, pageSize, totalCount}
 }
 
-export const commentsPS = async (dataSource, payload, postId) => {
+export const commentsPS = async (CommentsRepository, payload, postId) => {
     const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
-    let count = await dataSource.query(`
-    SELECT COUNT(*) 
-    FROM "Comments" where "postId" = $1 
-    `, [postId])
 
-    let comments = await dataSource.query(`
-            SELECT * FROM "Comments"
-            where "postId" = $1
-            ORDER BY "${sortBy}" ${sortDirection}
-            LIMIT $2 OFFSET $3`,
-        [postId, pageSize, offset])
+    const query = await CommentsRepository
+        .createQueryBuilder("c")
+        .leftJoinAndSelect("c.post", "p")
+        .leftJoinAndSelect("c.CommentatorInfo", "ci")
+        .leftJoinAndSelect("c.LikesInfo", "li")
+        .where("p.id = :postId", {postId})
+        .andWhere("c.deleted = :deleted", {deleted})
 
-    const totalCount = +count[0].count
+    const comments = await query
+        .orderBy(`c.${sortBy}`, `${sortDirection.toUpperCase()}`)
+        .limit(pageSize)
+        .offset(offset)
+        .getMany()
+
+    const totalCount = await query.getCount()
     const pagesCount = Math.ceil(totalCount / pageSize)
 
     return {comments, pagesCount, pageNumber, pageSize, totalCount}

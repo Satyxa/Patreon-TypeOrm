@@ -5,6 +5,9 @@ import {DevicesService} from "./Services/devices.service";
 import {BlogService} from "./Services/blogs.service";
 import {PostService} from "./Services/posts.service";
 import {CommentsService} from "./Services/comments.service";
+import {InjectDataSource} from "@nestjs/typeorm";
+import {DataSource} from "typeorm";
+import {QuizService} from "./Services/Quiz.service";
 
 @Controller()
 export class AppController {
@@ -14,7 +17,9 @@ export class AppController {
       private readonly DevicesService: DevicesService,
       private readonly BlogService: BlogService,
       private readonly PostService: PostService,
-      private readonly CommentsService: CommentsService
+      private readonly CommentsService: CommentsService,
+      private readonly QuizService: QuizService,
+      @InjectDataSource() protected dataSource: DataSource
   ) {}
 
   @Get()
@@ -24,11 +29,13 @@ export class AppController {
   @Delete('testing/all-data')
   @HttpCode(204)
   async deleteAll() {
+    console.log('privet')
     await this.UserService.deleteAll()
     await this.DevicesService.deleteAll()
     await this.PostService.deleteAllPosts()
     await this.BlogService.deleteAllBlogs()
     await this.CommentsService.deleteAll()
+    await this.QuizService.deleteAll()
   }
 
 }

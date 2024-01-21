@@ -1,5 +1,5 @@
 import {Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn} from "typeorm";
-import {User} from "../User/UserEntity";
+import {User} from "./User/UserEntity";
 
 @Entity()
 export class Device {
@@ -17,4 +17,13 @@ export class Device {
     userId: string
     @Column({default: false, type: 'boolean'})
     deleted: boolean
+}
+
+export class createDevice {
+    public deleted: false
+    constructor(public deviceId: string,
+                public ip: string,
+                public title: string,
+                public lastActiveDate: string,
+                public userId: string) {}
 }

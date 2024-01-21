@@ -31,11 +31,11 @@ export class UserController {
     async getAllUsers(@Query() payload: queryPayload) {
         return this.UserService.getAllUsers(payload)
     }
-    @UseGuards(BasicAuthGuard)
-    @Get(':id')
-    async getOneUser(@Param('id') id: string){
-        return await this.UserService.getOneUser(id)
-    }
+    // @UseGuards(BasicAuthGuard)
+    // @Get(':id')
+    // async getOneUser(@Param('id') id: string){
+    //     return await this.UserService.getOneUser(id)
+    // }
     @UseGuards(BasicAuthGuard)
     @Post()
     async createUser(@Body() createUserPayload: createUserPayloadClass) {

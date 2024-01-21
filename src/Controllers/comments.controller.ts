@@ -37,6 +37,7 @@ export class CommentsController {
                         @Body() CommentContentPayload: CommentContentClass,
                         @Req() req: any) {
         if(!id) throw new BadRequestException([{message: 'id is required', field: 'id'}])
+        console.log(id)
         return await this.CommentsService.updateCommentContent(id, req.userId, CommentContentPayload.content)
     }
 

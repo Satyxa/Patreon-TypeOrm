@@ -14,7 +14,6 @@ export const getResultByToken = (refreshToken: string) : {userId: string, device
 
 export const createToken = async (id: string, deviceId: string, ip: string, exp: string) => {
     return jwt.sign({userId: id, ip, deviceId}, secretKey, {expiresIn: exp})
-
 }
 
 export const getUserId = async (headers) => {
