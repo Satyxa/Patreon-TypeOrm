@@ -2,8 +2,6 @@ import {Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn}
 import {AccountData, createAC} from "./AccountDataEntity";
 import {createEC, EmailConfirmation} from "./EmailConfirmationEntity";
 import {Device} from "../DeviceEntity";
-import {Delete} from "@nestjs/common";
-import {PairGame} from "../Quiz/PairGame";
 
 
 @Entity()

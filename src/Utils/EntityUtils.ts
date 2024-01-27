@@ -14,6 +14,7 @@ import {createEC} from "../Entities/User/EmailConfirmationEntity";
 import {createUser} from "../Entities/User/UserEntity";
 import {createCI} from "../Entities/Comment/CommentatorInfoEntity";
 import {createComment} from "../Entities/Comment/CommentEntity";
+import {createQuestionForPP, Question} from "../Entities/Quiz/QuestionEntity";
 
 export const EntityUtils = {
     CreateUser: async (login, email, password) => {
@@ -129,5 +130,4 @@ export const EntityUtils = {
             .where("d.userId = :userId", {userId})
             .getMany()
     },
-
 }

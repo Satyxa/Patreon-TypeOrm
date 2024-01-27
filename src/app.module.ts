@@ -39,6 +39,12 @@ import {PostReactions} from "./Entities/Posts/PostReactionsEntity";
 import {QuizController} from "./Controllers/Quiz.controller";
 import {QuizService} from "./Services/Quiz.service";
 import {Question} from "./Entities/Quiz/QuestionEntity";
+import {GameController} from "./Controllers/Game.controller";
+import {GameService} from "./Services/Game.service";
+import {Answers} from "./Entities/Quiz/AnswersEntity";
+import {PairGame} from "./Entities/Quiz/PairGameEntity";
+import {GameQuestions} from "./Entities/Quiz/GameQuestionsEntity";
+import {Player} from "./Entities/Quiz/PlayerEntity";
 
 @Module({
     imports: [
@@ -61,7 +67,8 @@ import {Question} from "./Entities/Quiz/QuestionEntity";
         TypeOrmModule.forFeature([User, EmailConfirmation,
             AccountData, Device, TokenBlackList, Blog, Post, NewestLikes,
             ExtendedLikesInfo, LikesInfo, Comment, CommentatorInfo, PostReactions,
-            CommentReactions, Question]),
+            CommentReactions, Question, Answers, PairGame, GameQuestions,
+            Player]),
         UsersModule,
         ThrottlerModule.forRoot([{
             ttl: 60000,
@@ -70,13 +77,13 @@ import {Question} from "./Entities/Quiz/QuestionEntity";
     ],
     controllers: [AppController, LoginController, RegistrationController,
         EmailController, DevicesController, BlogController, PostController, CommentsController,
-    QuizController],
+    QuizController, GameController],
     providers: [{
         provide: APP_GUARD,
         useClass: ThrottlerGuard
     },
         AppService, LoginService, EmailService, DevicesService, UserService,
-    BlogService, PostService, CommentsService, QuizService],
+    BlogService, PostService, CommentsService, QuizService, GameService],
 })
 export class AppModule {
     constructor(private dataSource: DataSource) {}

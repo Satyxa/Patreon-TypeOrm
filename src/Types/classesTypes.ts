@@ -3,7 +3,7 @@ import {
     IsEmail,
     IsIn,
     isIn, isNotEmpty,
-    IsNotEmpty,
+    IsNotEmpty, IsString,
     isString,
     Length,
     Matches,
@@ -95,4 +95,11 @@ export class updatePostForBlogPayload {
     blogId: string
     @IsNotEmpty()
     postId: string
+}
+
+export class sendAnswerPayload {
+    @Transform(param => param.value.trim())
+    @IsNotEmpty()
+    @IsString()
+    answer: string
 }

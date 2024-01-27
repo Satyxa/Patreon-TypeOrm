@@ -35,6 +35,13 @@ export class createViewQuestion {
                 public published: boolean){}
 }
 
+export class createQuestionForPP {
+    constructor(public id: string,
+                public body: string){}
+}
+
+
+
 export class createQuestionIM {
     @Length(10, 500)
     body: string

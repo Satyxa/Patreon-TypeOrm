@@ -60,8 +60,6 @@ export const CheckEntityId = {
     checkGameId: async (PairGameRepository, id) => {
         const game = await PairGameRepository
             .createQueryBuilder("game")
-            .leftJoinAndSelect("game.firstPlayerProgress", "fpp")
-            .leftJoinAndSelect("game.secondPlayerProgress", "spp")
             .where("game.id = :id", {id})
             .getOne()
         if (!game) throw new HttpException('Not Found', 404)
