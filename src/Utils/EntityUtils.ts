@@ -15,6 +15,8 @@ import {createUser} from "../Entities/User/UserEntity";
 import {createCI} from "../Entities/Comment/CommentatorInfoEntity";
 import {createComment} from "../Entities/Comment/CommentEntity";
 import {createQuestionForPP, Question} from "../Entities/Quiz/QuestionEntity";
+import { UserAnswers } from '../Entities/Quiz/UserAnswersEntity';
+import { createViewPlayerProgress, PlayerProgress } from '../Entities/Quiz/PlayerProgressEntity';
 
 export const EntityUtils = {
     CreateUser: async (login, email, password) => {
@@ -130,4 +132,35 @@ export const EntityUtils = {
             .where("d.userId = :userId", {userId})
             .getMany()
     },
+    createPlayer: (userId, gameId, login) => {
+        const id = uuid.v4()
+        return {
+            playerId: uuid.v4(),
+            userId,
+            gameId,
+            login,
+            score: 0
+        }
+    },
+
+    getAnswers: (correctAnswers, questionId) => {
+        return correctAnswers.map(a => {
+            return {
+                id: uuid.v4(),
+                answer: a,
+                questionId
+            }
+        })
+    },
+
+    getPlayerProgress: async (PlayerProgressRepository, userId, userAnswers: UserAnswers[] = []) => {
+        const pp: PlayerProgress = await PlayerProgressRepository
+          .createQueryBuilder("pp")
+          .leftJoinAndSelect('pp.player', 'pl')
+          .select(['pp.score', 'pl'])
+          .where('pl.id = :userId', {userId})
+          .getOne()
+
+        return new createViewPlayerProgress(pp.score, userAnswers, pp.player)
+    }
 }

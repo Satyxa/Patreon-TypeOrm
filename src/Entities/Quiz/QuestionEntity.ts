@@ -1,5 +1,7 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import {ArrayMinSize, IsArray, IsBoolean, Length} from "class-validator";
+import { CorrectAnswers } from './CorrectAnswersEntity';
+import { GameQuestions } from './GameQuestionsEntity';
 
 @Entity()
 export class Question {
@@ -9,12 +11,10 @@ export class Question {
     body: string
     @Column()
     createdAt: string
-    @Column()
+    @Column({nullable: true, default: null})
     updatedAt: string
     @Column({type: 'boolean', default: false})
     published: boolean
-    @Column({type: "varchar"})
-    correctAnswers: string
 }
 
 export class createQuestion {
@@ -22,7 +22,6 @@ export class createQuestion {
     constructor(public id: string,
                 public body: string,
                 public createdAt: string,
-                public updatedAt: string,
                 public correctAnswers: string){}
 }
 
@@ -30,7 +29,7 @@ export class createViewQuestion {
     constructor(public id: string,
                 public body: string,
                 public createdAt: string,
-                public updatedAt: string,
+                public updatedAt: string | null,
                 public correctAnswers: string[],
                 public published: boolean){}
 }

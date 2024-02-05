@@ -1,28 +1,39 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "typeorm";
+import {
+  Column,
+  Entity,
+  Generated,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryColumn,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Question } from './QuestionEntity';
+import { PairGame } from './PairGameEntity';
 
 @Entity()
 export class GameQuestions {
-    @PrimaryGeneratedColumn("uuid")
-    gameQuestionId: string
-    @Column()
-    questionId: string
-    @Column()
-    gameId: string
-    @Column()
-    body: string
-    @Column()
-    answers: string
+  @PrimaryGeneratedColumn('uuid')
+  @Generated('uuid')
+  gameQuestionId: string
+  @Column('uuid')
+  questionId: string
+  @Column({type: 'varchar'})
+  body: string
+  @ManyToOne(() => PairGame, { onDelete: 'CASCADE' })
+  @JoinColumn()
+  game: PairGame
 }
 
-export class ViewGameQuestions {
-    constructor(public body: string,
-                public id: string) {}
+export class createViewGameQuestion {
+  constructor(public body: string,
+              public id: string) {
+  }
 }
 
-export class createGameQuestion {
-    constructor(public gameQuestionId: string,
-                public questionId: string,
-                public gameId: string,
-                public body: string,
-                public answers: string,) {}
+export class createDBGameQuestion {
+  constructor(public game: PairGame,
+              public questionId: string,
+              public body: string) {
+  }
 }

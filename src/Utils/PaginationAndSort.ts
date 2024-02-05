@@ -2,7 +2,9 @@ import {Brackets} from "typeorm";
 import {deleted} from "../Constants";
 
 export const getValuesPS = (payload) => {
-    let {pageNumber, pageSize, sortBy, searchLoginTerm, searchEmailTerm, sortDirection, searchNameTerm} = payload
+    let {pageNumber, pageSize, sortBy, searchLoginTerm,
+        searchEmailTerm, sortDirection, bodySearchTerm,
+        searchNameTerm, publishedStatus} = payload
     if (!searchLoginTerm && !searchEmailTerm) {
         searchEmailTerm = ''
         searchLoginTerm = ''
@@ -14,8 +16,42 @@ export const getValuesPS = (payload) => {
         searchLoginTerm: !searchLoginTerm ? !searchEmailTerm ? '' : '$#@' : searchLoginTerm,
         searchEmailTerm: !searchEmailTerm ? !searchLoginTerm ? '' : '$#@' : searchEmailTerm,
         searchNameTerm: searchNameTerm ?? '',
+        bodySearchTerm: bodySearchTerm ?? '',
+        publishedStatus: publishedStatus ?? 'all',
         sortDirection: sortDirection ?? 'DESC' as 'ASC' | 'DESC' | undefined,
     }
+}
+
+export const questionsPS = async (QuestionRepository, payload) => {
+    let {pageNumber, pageSize, sortBy, bodySearchTerm,
+        publishedStatus, sortDirection} = getValuesPS(payload)
+
+    const offset = pageSize * pageNumber - pageSize
+
+    let query;
+
+    if( publishedStatus === 'all')
+        query =
+          await QuestionRepository.createQueryBuilder('q')
+            .where('q.body ilike :bodySearchTerm', {bodySearchTerm: `%${bodySearchTerm}%`})
+    else
+      query =
+      await QuestionRepository.createQueryBuilder('q')
+      .where('published = :ps', {ps: publishedStatus === 'published' ? true : false})
+      .andWhere('q.body ilike :bodySearchTerm', {bodySearchTerm: `%${bodySearchTerm}%`})
+
+    const totalCount = await query.getCount()
+
+    const questions =
+      await query
+      .orderBy(`q.${sortBy}`, `${sortDirection.toUpperCase()}`)
+      .limit(pageSize)
+      .offset(offset)
+      .getMany()
+
+    const pagesCount = Math.ceil(totalCount / pageSize)
+    return {questions, pagesCount, pageNumber, pageSize, totalCount}
+
 }
 
 export const usersPS = async (UserRepository, payload) => {

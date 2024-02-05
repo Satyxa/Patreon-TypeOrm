@@ -39,12 +39,14 @@ import {PostReactions} from "./Entities/Posts/PostReactionsEntity";
 import {QuizController} from "./Controllers/Quiz.controller";
 import {QuizService} from "./Services/Quiz.service";
 import {Question} from "./Entities/Quiz/QuestionEntity";
-import {GameController} from "./Controllers/Game.controller";
-import {GameService} from "./Services/Game.service";
-import {Answers} from "./Entities/Quiz/AnswersEntity";
-import {PairGame} from "./Entities/Quiz/PairGameEntity";
-import {GameQuestions} from "./Entities/Quiz/GameQuestionsEntity";
 import {Player} from "./Entities/Quiz/PlayerEntity";
+import { CorrectAnswers } from './Entities/Quiz/CorrectAnswersEntity';
+import { PlayerProgress } from './Entities/Quiz/PlayerProgressEntity';
+import { GameQuestions } from './Entities/Quiz/GameQuestionsEntity';
+import { PairGame } from './Entities/Quiz/PairGameEntity';
+import { GameController } from './Controllers/Game.controller';
+import { GameService } from './Services/Game.service';
+import { UserAnswers } from './Entities/Quiz/UserAnswersEntity';
 
 @Module({
     imports: [
@@ -62,13 +64,14 @@ import {Player} from "./Entities/Quiz/PlayerEntity";
             entities: [User, EmailConfirmation, AccountData, Device,
                 TokenBlackList, Blog, Post, NewestLikes, ExtendedLikesInfo,
                 LikesInfo, Comment, CommentatorInfo, PostController,
-                CommentReactions, Question]
+                CommentReactions, Question, Player, CorrectAnswers,
+                PlayerProgress, GameQuestions, PairGame, UserAnswers]
         }),
         TypeOrmModule.forFeature([User, EmailConfirmation,
             AccountData, Device, TokenBlackList, Blog, Post, NewestLikes,
             ExtendedLikesInfo, LikesInfo, Comment, CommentatorInfo, PostReactions,
-            CommentReactions, Question, Answers, PairGame, GameQuestions,
-            Player]),
+            CommentReactions, Question, Player, CorrectAnswers, PlayerProgress,
+        PairGame, GameQuestions, UserAnswers]),
         UsersModule,
         ThrottlerModule.forRoot([{
             ttl: 60000,

@@ -8,7 +8,7 @@ import {EMAIL_CONF_SEND_MESSAGE, PASS_REC_MESSAGE} from "../Constants";
 import {findEntityBy} from "../Utils/checkEntityId";
 import {AccountData} from "../Entities/User/AccountDataEntity";
 import {User} from "../Entities/User/UserEntity";
-import {EmailConfirmation} from "../Entities/User/EmailConfirmationEntity";
+import { EmailConfirmation } from '../Entities/User/EmailConfirmationEntity';
 
 export class EmailService {
     constructor(@InjectRepository(AccountData)
@@ -19,7 +19,7 @@ export class EmailService {
     private readonly EmailConfirmationRepository: Repository<EmailConfirmation>) {}
 
     async confirmEmail(payload) {
-        const {code} = payload
+    const { code } = payload;
         if(!code) throw new BadRequestException([{message: 'code is required', field: "code"}])
 
         const User: User | null = await this.UserRepository

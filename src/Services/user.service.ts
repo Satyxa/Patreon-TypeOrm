@@ -11,6 +11,7 @@ import {AccountData} from "../Entities/User/AccountDataEntity";
 import {EmailConfirmation} from "../Entities/User/EmailConfirmationEntity";
 import {CheckEntityId, findEntityBy} from "../Utils/checkEntityId";
 import {EMAIL_CONF_MESSAGE} from "../Constants";
+import { Player } from '../Entities/Quiz/PlayerEntity';
 
 @Injectable()
 export class UserService {
@@ -20,7 +21,9 @@ export class UserService {
                 private readonly AccountDataRepository: Repository<AccountData>,
                 @InjectRepository(EmailConfirmation)
                 private readonly EmailConfirmationRepository: Repository<EmailConfirmation>,
-                @InjectDataSource() private readonly dataSource: DataSource) {
+                @InjectRepository(Player)
+                private readonly PlayerRepository: Repository<Player>,
+                @InjectDataSource() private readonly dataSource: DataSource,) {
     }
 
     async deleteAll() {
@@ -44,6 +47,7 @@ export class UserService {
     // }
 
     async createUser(payload) {
+
         const {login, email, password} = payload
         await findEntityBy
             .findUserByLoginAndEmail(this.UserRepository, login, 'login', 400)
@@ -55,6 +59,11 @@ export class UserService {
         await this.AccountDataRepository.save(AccountData)
         await this.EmailConfirmationRepository.save(EmailConfirmation)
         await this.UserRepository.save(User)
+
+        await this.PlayerRepository.save({
+            id: User.id,
+            login: AccountData.login
+        })
 
         await emailAdapter.sendEmail(email, 'Confirm your email',
             EMAIL_CONF_MESSAGE(EmailConfirmation.confirmationCode))

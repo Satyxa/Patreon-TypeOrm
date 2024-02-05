@@ -4,12 +4,12 @@ import {
     IsIn,
     isIn, isNotEmpty,
     IsNotEmpty, IsString,
-    isString,
+    isString, IsUUID,
     Length,
     Matches,
     Validate,
-    ValidateIf
-} from "class-validator";
+    ValidateIf,
+} from 'class-validator';
 import {Transform} from "class-transformer";
 import {Optional} from "@nestjs/common";
 
@@ -102,4 +102,9 @@ export class sendAnswerPayload {
     @IsNotEmpty()
     @IsString()
     answer: string
+}
+
+export class validId {
+    @IsUUID()
+    id: string
 }

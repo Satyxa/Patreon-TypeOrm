@@ -1,23 +1,25 @@
-import {HttpException, Injectable} from "@nestjs/common";
-import {InjectRepository} from "@nestjs/typeorm";
-import {Brackets, Repository} from "typeorm";
-import {User} from "../Entities/User/UserEntity";
-import {CheckEntityId} from "../Utils/checkEntityId";
+import { createViewGameQuestion, GameQuestions } from '../Entities/Quiz/GameQuestionsEntity';
+import { createNewPairGame, createViewPairGame, PairGame } from '../Entities/Quiz/PairGameEntity';
+import { CorrectAnswers } from '../Entities/Quiz/CorrectAnswersEntity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Brackets, Repository } from 'typeorm';
+import { Player } from '../Entities/Quiz/PlayerEntity';
+import { Question } from '../Entities/Quiz/QuestionEntity';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
+import { gameUtils } from '../Utils/gameUtils';
+import {
+  createDBPlayerProgress,
+  createViewPlayerProgress, PlayerProgress,
+} from '../Entities/Quiz/PlayerProgressEntity';
 import * as uuid from 'uuid'
-import {createQuestionForPP, Question} from "../Entities/Quiz/QuestionEntity";
-import {AnswerDB, Answers, viewAnswer} from "../Entities/Quiz/AnswersEntity";
-import {createPairGame, PairGame, ViewPair} from "../Entities/Quiz/PairGameEntity";
-import {Player} from "../Entities/Quiz/PlayerEntity";
-import {gameUtils} from "../Utils/gameUtils";
-import {GameQuestions} from "../Entities/Quiz/GameQuestionsEntity";
+import { EntityUtils } from '../Utils/EntityUtils';
+import { CheckEntityId } from '../Utils/checkEntityId';
+import { createUserAnswer, createViewUserAnswer, UserAnswers } from '../Entities/Quiz/UserAnswersEntity';
+import { getLogger } from 'nodemailer/lib/shared';
 
 @Injectable()
 export class GameService {
-    constructor(@InjectRepository(User)
-                private readonly UserRepository: Repository<User>,
-                @InjectRepository(Answers)
-                private readonly AnswersRepository: Repository<Answers>,
-                @InjectRepository(PairGame)
+    constructor(@InjectRepository(PairGame)
                 private readonly PairGameRepository: Repository<PairGame>,
                 @InjectRepository(GameQuestions)
                 private readonly GameQuestionRepository: Repository<GameQuestions>,
@@ -25,131 +27,219 @@ export class GameService {
                 private readonly PlayerRepository: Repository<Player>,
                 @InjectRepository(Question)
                 private readonly QuestionRepository: Repository<Question>,
+                @InjectRepository(PlayerProgress)
+                private readonly PlayerProgressRepository: Repository<PlayerProgress>,
+                @InjectRepository(UserAnswers)
+                private readonly UserAnswersRepository: Repository<UserAnswers>,
+                @InjectRepository(CorrectAnswers)
+                private readonly CorrectAnswersRepository: Repository<CorrectAnswers>,
     ) {
     }
 
-    // async deleteAll() {
-    //     await this.QuestionRepository.delete({})
-    // }
+    async deleteAll() {
+        // await this.QuestionRepository.delete({})
+        await this.GameQuestionRepository.delete({})
+        await this.PairGameRepository.delete({})
+        await this.PlayerProgressRepository.delete({})
+    }
 
     async getActiveGame(userId) {
-        const game = await gameUtils
-            .getActiveGameForUser(this.PairGameRepository, userId)
+      // need to find active game for current user
+      const query = await gameUtils.findCurrentGame(this.PairGameRepository, userId)
 
-        return await gameUtils
-            .getViewPair(game.firstPlayerId, game.secondPlayerId,
-                game.id, game, this.PlayerRepository,
-                this.AnswersRepository, this.GameQuestionRepository)
+      const game = await query
+        .where(new Brackets(qb => {
+          qb.where('game.status = :Active', {Active: 'Active'})
+            .orWhere('game.status = :PendingSecondPlayer', {PendingSecondPlayer: 'PendingSecondPlayer'})
+        }))
+        .andWhere(new Brackets(qb => {
+          qb.where('fp.id = :userId', {userId})
+            .orWhere('sp.id = :userId', {userId})
+        }))
+        .getOne()
+
+      if(!game) throw new HttpException('Not Found', 404)
+
+      return gameUtils
+        .getViewGame(game, userId, this.UserAnswersRepository, this.GameQuestionRepository)
 
     }
 
 
     async getGameById(id, userId) {
-        await CheckEntityId.checkGameId(this.PairGameRepository, id)
+      const game: PairGame = await CheckEntityId
+        .checkGameId(this.PairGameRepository, id)
 
-        const game: PairGame | null =
-            await this.PairGameRepository
-            .createQueryBuilder('game')
-            .where(new Brackets(qb =>
-                qb.where("game.firstPlayerId = :userId", {userId})
-                    .orWhere("game.secondPlayerId = :userId", {userId})))
-            .andWhere("game.id = :id", {id})
-            .getOne()
-        if (!game) throw new HttpException('Forbidden', 403)
+      if(!game) throw new HttpException('Not Found', 404)
 
-        return await gameUtils
-            .getViewPair(game.firstPlayerId, game.secondPlayerId,
-                game.id, game, this.PlayerRepository,
-                this.AnswersRepository, this.GameQuestionRepository)
-
+      return gameUtils
+        .getViewGame(game, userId, this.UserAnswersRepository, this.GameQuestionRepository)
     }
 
     async setConnectToGame(userId) {
-        const game: PairGame | null =
-            await this.PairGameRepository
-            .createQueryBuilder('game')
-            .where("game.status = :status", {status: 'PendingSecondPlayer'})
-            .getOne()
+      const gameQuery = await gameUtils.getGameQuery(this.PairGameRepository)
 
-        if (game) {
-            const playerProgress = await gameUtils
-                .getPlayerProgress(this.PlayerRepository,
-                this.AnswersRepository, userId, game.id, this.UserRepository)
+      // CHECK AVAILABLE GAME
+      // founded game must be in status pending because active game have maximum players
+      const game: PairGame | null = await gameQuery
+        .where('game.status = :status', {status: 'PendingSecondPlayer'})
+        .getOne()
 
-            if(game.firstPlayerId === userId)
-                throw new HttpException('Forbidden', 403)
+      // if user already have active game he must finish the game before connect to new
+      await gameUtils.isUserAlreadyHaveActiveGame(gameQuery, userId)
 
-            const startGameDate = new Date().toISOString()
+      // need create player and progress for him anyway
+      const player = await this.PlayerRepository.findOneBy({id: userId})
+      if(!player) return console.log('игрока нет чота не так, GAME: ' + game, ', USERID: ' + userId);
 
-            await this.PairGameRepository.update(
-                {id: game.id},
-                {
-                    status: 'Active',
-                    secondPlayerId: playerProgress!.player.id,
-                    startGameDate
-                })
-            console.log(game.firstPlayerId, 11111111111)
-            return await gameUtils
-                .getViewPair(game.firstPlayerId, playerProgress!.player.id,
-                    game.id, game, this.PlayerRepository,
-                        this.AnswersRepository, this.GameQuestionRepository)
-        } else {
-            const gameId = uuid.v4()
-            const pairCreatedDate = new Date().toISOString()
+      // new PP so all values is default
+      const DBPlayerProgress =
+        new createDBPlayerProgress(0,  player)
 
-            const questions = await this.QuestionRepository
-                .createQueryBuilder('q')
-                .getMany()
+      const viewPlayerProgress =
+        new createViewPlayerProgress(0, [], player)
 
-            const questionsForGame = await gameUtils
-                .getRandomQuestions(questions, gameId)
+      if(game) {
+        // need add playerProgress and set status game start
+        // also need add question to game because if game hasn't started yet,
+        // questions must be null
 
-            await this.GameQuestionRepository
-                .createQueryBuilder("gq")
-                .insert()
-                .values(questionsForGame)
-                .execute()
+        if(game.firstPlayerProgress.player.id === userId)
+          throw new HttpException('Forbidden', 403)
 
-            const newPair = new createPairGame(gameId, 'PendingSecondPlayer',
-                pairCreatedDate, null, null,
-                    userId, null)
+        const startGameDate = new Date().toISOString()
 
-            await this.PairGameRepository.save(newPair)
+        // require all question to get questions for game later
+        const allQuestions = await this.QuestionRepository
+          .createQueryBuilder("q")
+          // .where("q.published = :status", {status: true})
+          .getMany()
 
-            return await gameUtils
-                .getViewPair(userId, null, gameId, newPair,
-                    this.PlayerRepository, this.AnswersRepository,
-                        this.GameQuestionRepository, this.UserRepository)
-        }
+        // get random questions for game
+        const { viewQuestions, DBQuestions } =
+          await gameUtils.getRandomQuestions(allQuestions, game)
+
+        // save questions
+        await this.GameQuestionRepository.save(DBQuestions)
+
+        // save new PP
+        await this.PlayerProgressRepository.save(DBPlayerProgress)
+
+        // update Game
+        await this.PairGameRepository
+          .update({status: 'PendingSecondPlayer'},
+            {
+              secondPlayerProgress: DBPlayerProgress,
+              startGameDate,
+              status: 'Active'
+            })
+
+
+        const pp = await EntityUtils
+          .getPlayerProgress(this.PlayerProgressRepository,
+            game.firstPlayerProgress.player.id, [])
+        return new createViewPairGame(
+          game.id, 'Active', game.pairCreatedDate, startGameDate,
+          null, pp!,
+          viewPlayerProgress, viewQuestions)
+
+      }
+      else if(!game){
+        // if no game so need to create new with status pending
+
+        const id = uuid.v4()
+        const pairCreatedDate = new Date().toISOString()
+
+        await this.PlayerProgressRepository.save(DBPlayerProgress)
+
+        const dbPG =
+          gameUtils.createDBPairGame(id, pairCreatedDate, DBPlayerProgress)
+        await this.PairGameRepository.save(dbPG)
+
+        return gameUtils.createViewPairGame(id, pairCreatedDate, viewPlayerProgress)
+      }
+      else console.log('124str game service');
     }
 
     async sendAnswer(answer, userId) {
-        const addedAt = new Date().toISOString()
-        const game = await gameUtils
-            .getActiveGameForUser(this.PairGameRepository, userId)
 
-        const gameQuestions = await gameUtils
-            .getQuestionsForGame(this.GameQuestionRepository, game.id)
+      const query = await gameUtils.findCurrentGame(this.PairGameRepository, userId)
+      const game: PairGame | null = await query
+        .where('game.status = :status', {status: 'Active'})
+        .andWhere(new Brackets(qb => {
+          qb.where('fp.id = :userId', {userId})
+            .orWhere('sp.id = :userId', {userId})
+        }))
+        .getOne()
 
-        const userAnswers = await gameUtils
-            .getAnswersForGame(this.AnswersRepository, userId, game.id)
+      if(!game) throw new HttpException('Forbidden', 403)
 
-        const currentQuestion = gameQuestions[userAnswers.length]
+      // first need to get player progress
+      // @ts-ignore
+      const playerProgress: PlayerProgress =
+        game.firstPlayerProgress.player.id === userId ?
+          game.firstPlayerProgress : game.secondPlayerProgress
 
-        const questionAnswers = currentQuestion.answers.split(',')
+      // then need to check for which question is answer
+      // for that first need find all user answers
 
-        const answerStatus = questionAnswers.includes(answer) ? 'Correct' : 'Incorrect'
+      const userAnswers =
+        await this.UserAnswersRepository
+        .createQueryBuilder('ua')
+        .where('ua.ppId = :ppId', {ppId: playerProgress.ppId})
+          .getMany()
 
-        const newAnswerView = new viewAnswer(addedAt,
-             currentQuestion.questionId, answerStatus)
+      if(userAnswers.length === 5)
+        throw new HttpException('Forbidden', 403)
 
-        const newAnswerDB = new AnswerDB(uuid.v4(), userId, game.id,
-            addedAt, currentQuestion.questionId, answerStatus)
+      // and then all game questions
 
-        if(questionAnswers.includes(answer)) await this.AnswersRepository.save(newAnswerDB)
-        else await this.AnswersRepository.save(newAnswerDB)
-        return newAnswerView
+      const gameQuestions =
+        await this.GameQuestionRepository
+          .createQueryBuilder("gq")
+          .leftJoinAndSelect("gq.game", 'game')
+          .where("game.id = :gameId", {gameId: game.id})
+          .getMany()
+
+      // Now need to know for which question is answer
+
+      const currentQuestion = gameQuestions[userAnswers.length]
+
+      if (userAnswers.length === 5) throw new HttpException('Forbidden', 403)
+
+      // Now searching correct answer
+
+      const correctAnswersDB =
+        await this.CorrectAnswersRepository
+          .createQueryBuilder("ca")
+          .where("ca.questionId = :questionId",
+            {questionId: currentQuestion.questionId})
+          .getMany()
+
+      const correctAnswers = correctAnswersDB.map(ca => ca.answer)
+
+      const answerStatus = correctAnswers.includes(answer, 0) ? 'Correct' : 'Incorrect'
+
+      const addedAt = new Date().toISOString()
+
+      const newAnswer =
+        new createUserAnswer
+        (currentQuestion.questionId, answerStatus, addedAt, playerProgress.ppId)
+
+      await this.UserAnswersRepository.save(newAnswer)
+
+      if(answerStatus === 'Correct') await this.PlayerProgressRepository
+        .update({ppId: playerProgress.ppId},
+          {score: () => `score + 1`})
+
+      if(userAnswers.length === 4)
+        await gameUtils.finishGame(game, userId,
+          this.UserAnswersRepository, this.PairGameRepository,
+          this.PlayerProgressRepository)
+
+      return new createViewUserAnswer
+      (currentQuestion.questionId, answerStatus, addedAt)
+
     }
-
 
 }

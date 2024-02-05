@@ -8,6 +8,7 @@ import {CommentsService} from "./Services/comments.service";
 import {InjectDataSource} from "@nestjs/typeorm";
 import {DataSource} from "typeorm";
 import {QuizService} from "./Services/Quiz.service";
+import { GameService } from './Services/Game.service';
 
 @Controller()
 export class AppController {
@@ -19,7 +20,8 @@ export class AppController {
       private readonly PostService: PostService,
       private readonly CommentsService: CommentsService,
       private readonly QuizService: QuizService,
-      @InjectDataSource() protected dataSource: DataSource
+      @InjectDataSource() protected dataSource: DataSource,
+      private readonly GameService: GameService
   ) {}
 
   @Get()
@@ -36,6 +38,7 @@ export class AppController {
     await this.BlogService.deleteAllBlogs()
     await this.CommentsService.deleteAll()
     await this.QuizService.deleteAll()
+    await this.GameService.deleteAll()
   }
 
 }

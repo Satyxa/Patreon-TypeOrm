@@ -10,7 +10,7 @@ export class LoginController {
     async getMe(@Headers() headers) {
         return this.LoginService.getMe(headers.authorization)
     }
-    @Throttle({ default: { limit: 5, ttl: 10000 } })
+
     @Post('login')
     @HttpCode(200)
     async login(@Body() signInPayload,
