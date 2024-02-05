@@ -54,6 +54,36 @@ export const questionsPS = async (QuestionRepository, payload) => {
 
 }
 
+export const pairsPS = async (payload, userId, query) => {
+
+    let {pageNumber, pageSize,
+        sortBy, sortDirection} = getValuesPS(payload)
+
+    const offset = pageSize * pageNumber - pageSize
+
+    if(sortBy === 'createdAt') sortBy = 'pairCreatedDate'
+
+    const pairs = await query
+        .where(new Brackets(qb => {
+            qb.where('fpl.userId = :userId', {userId})
+              .orWhere('spl.userId = :userId', {userId})
+        }))
+        .orderBy(`q.${sortBy}`, `${sortDirection.toUpperCase()}`)
+        .limit(pageSize)
+        .offset(offset)
+        .getMany()
+
+    const totalCount = await query
+      .where(new Brackets(qb => {
+        qb.where('fpl.userId = :userId', {userId})
+          .orWhere('spl.userId = :userId', {userId})
+        }))
+      .getCount()
+
+    const pagesCount = Math.ceil(totalCount / pageSize)
+    return {pairs, pagesCount, pageNumber, pageSize, totalCount}
+}
+
 export const usersPS = async (UserRepository, payload) => {
     let {pageNumber, pageSize, sortBy, searchLoginTerm,
          searchEmailTerm, sortDirection} = getValuesPS(payload)

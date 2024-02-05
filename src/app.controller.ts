@@ -31,7 +31,6 @@ export class AppController {
   @Delete('testing/all-data')
   @HttpCode(204)
   async deleteAll() {
-    console.log('privet')
     await this.UserService.deleteAll()
     await this.DevicesService.deleteAll()
     await this.PostService.deleteAllPosts()

@@ -19,58 +19,61 @@ export class EmailService {
     private readonly EmailConfirmationRepository: Repository<EmailConfirmation>) {}
 
     async confirmEmail(payload) {
-    const { code } = payload;
-        if(!code) throw new BadRequestException([{message: 'code is required', field: "code"}])
-
-        const User: User | null = await this.UserRepository
-            .createQueryBuilder("u")
-            .leftJoinAndSelect("u.EmailConfirmation", "em")
-            .where("em.confirmationCode = :code", {code})
-            .getOne()
-
-        if(!User) throw new BadRequestException([{message: 'invalid code', field: "code"}])
-        if(User.deleted) throw new BadRequestException([{message: 'user deleted', field: "code"}])
-        if (User.EmailConfirmation.isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "code" }])
-
-        await this.EmailConfirmationRepository.update({confirmationCode: code}, {isConfirmed: true})
+        return
+    // const { code } = payload;
+    //     if(!code) throw new BadRequestException([{message: 'code is required', field: "code"}])
+    //
+    //     const User: User | null = await this.UserRepository
+    //         .createQueryBuilder("u")
+    //         .leftJoinAndSelect("u.EmailConfirmation", "em")
+    //         .where("em.confirmationCode = :code", {code})
+    //         .getOne()
+    //
+    //     if(!User) throw new BadRequestException([{message: 'invalid code', field: "code"}])
+    //     if(User.deleted) throw new BadRequestException([{message: 'user deleted', field: "code"}])
+    //     if (User.EmailConfirmation.isConfirmed) throw new BadRequestException([{ message: 'already confirmed', field: "code" }])
+    //
+    //     await this.EmailConfirmationRepository.update({confirmationCode: code}, {isConfirmed: true})
     }
     async confirmationCodeResending(payload) {
-        const {email} = payload
-        if(!email) throw new BadRequestException([{message: 'email is required', field: "email"}])
-
-        const user: User = await findEntityBy
-            .findUserByLoginAndEmail(this.UserRepository, email,
-                'email', 400, 'emailRes')
-
-        if(user.EmailConfirmation.isConfirmed) throw new BadRequestException(
-            [{ message: 'already confirmed', field: "email" }])
-
-        const newCode = uuid.v4()
-
-        await this.EmailConfirmationRepository
-            .update({userId: user.id}, {confirmationCode: newCode})
-
-        await emailAdapter.sendEmail(email, 'email confirmation', EMAIL_CONF_SEND_MESSAGE(newCode))
+        return
+        // const {email} = payload
+        // if(!email) throw new BadRequestException([{message: 'email is required', field: "email"}])
+        //
+        // const user: User = await findEntityBy
+        //     .findUserByLoginAndEmail(this.UserRepository, email,
+        //         'email', 400, 'emailRes')
+        //
+        // if(user.EmailConfirmation.isConfirmed) throw new BadRequestException(
+        //     [{ message: 'already confirmed', field: "email" }])
+        //
+        // const newCode = uuid.v4()
+        //
+        // await this.EmailConfirmationRepository
+        //     .update({userId: user.id}, {confirmationCode: newCode})
+        //
+        // await emailAdapter.sendEmail(email, 'email confirmation', EMAIL_CONF_SEND_MESSAGE(newCode))
     }
 
     async recoveryCode(email) {
-        const User: User = await findEntityBy
-            .findUserByLoginAndEmail(this.UserRepository, email,
-                'email', 404)
-
-        if(!User )throw new BadRequestException(
-            [{message: 'user with that email does not exist', field: "email"}])
-        else {
-            const recoveryCode = uuid.v4()
-            const {userId} = User.AccountData
-
-            await this.UserRepository.createQueryBuilder("u")
-                .update("u.recoveryCode = :recoveryCode", {recoveryCode})
-                .where("u.id = :userId", {userId})
-
-            const subject = 'Password Recovery'
-            await emailAdapter.sendEmail(email, subject, PASS_REC_MESSAGE(recoveryCode))
-        }
+        return
+        // const User: User = await findEntityBy
+        //     .findUserByLoginAndEmail(this.UserRepository, email,
+        //         'email', 404)
+        //
+        // if(!User )throw new BadRequestException(
+        //     [{message: 'user with that email does not exist', field: "email"}])
+        // else {
+        //     const recoveryCode = uuid.v4()
+        //     const {userId} = User.AccountData
+        //
+        //     await this.UserRepository.createQueryBuilder("u")
+        //         .update("u.recoveryCode = :recoveryCode", {recoveryCode})
+        //         .where("u.id = :userId", {userId})
+        //
+        //     const subject = 'Password Recovery'
+        //     await emailAdapter.sendEmail(email, subject, PASS_REC_MESSAGE(recoveryCode))
+        // }
     }
 
     async getNewPassword(payload) {

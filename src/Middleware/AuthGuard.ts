@@ -20,11 +20,14 @@ export class AuthGuard implements CanActivate {
         if(!req.headers.authorization) throw new UnauthorizedException()
 
         const token = req.headers.authorization.split(' ')[1]
+        if(req.headers.authorization.split(' ')[0] !== 'Bearer')
+            throw new UnauthorizedException()
         if(!token) throw new UnauthorizedException()
         if(!getResultByToken(token)) throw new UnauthorizedException()
 
         const tokenPayload = await getResultByToken(token)
         if(!tokenPayload) throw new UnauthorizedException()
+
         const {userId, deviceId, iat} = tokenPayload
         const foundUser = await CheckEntityId.checkUserId(this.UserRepository, userId)
 

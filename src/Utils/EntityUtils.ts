@@ -153,12 +153,13 @@ export const EntityUtils = {
         })
     },
 
-    getPlayerProgress: async (PlayerProgressRepository, userId, userAnswers: UserAnswers[] = []) => {
+    getPlayerProgress: async (PlayerProgressRepository, fppId, userAnswers: UserAnswers[] = []) => {
         const pp: PlayerProgress = await PlayerProgressRepository
           .createQueryBuilder("pp")
           .leftJoinAndSelect('pp.player', 'pl')
-          .select(['pp.score', 'pl'])
-          .where('pl.id = :userId', {userId})
+          .select(['pp.score', 'pl', 'pp.ppId'])
+          //@ts-ignore
+          .where('pp.ppId = :fppId', {fppId})
           .getOne()
 
         return new createViewPlayerProgress(pp.score, userAnswers, pp.player)

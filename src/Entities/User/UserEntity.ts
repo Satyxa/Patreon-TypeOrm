@@ -2,6 +2,7 @@ import {Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn}
 import {AccountData, createAC} from "./AccountDataEntity";
 import {createEC, EmailConfirmation} from "./EmailConfirmationEntity";
 import {Device} from "../DeviceEntity";
+import { Statistic } from './StatisticEntity';
 
 
 @Entity()
@@ -21,6 +22,8 @@ export class User {
     Devices: Device[]
     @Column({default: false, type: 'boolean'})
     deleted: boolean
+    @OneToOne(() => Statistic)
+    statistic: Statistic
 }
 
 export class createUser {

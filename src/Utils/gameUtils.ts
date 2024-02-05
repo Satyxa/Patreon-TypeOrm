@@ -1,18 +1,12 @@
 import * as uuid from 'uuid'
-// import {createQuestionForPP, Question} from "../Entities/Quiz/QuestionEntity";
-//
-// import {Brackets, Repository} from "typeorm";
-// import {BadRequestException, HttpException} from "@nestjs/common";
-// import {EntityUtils} from "./EntityUtils";
-// import {CheckEntityId} from "./checkEntityId";
-import {User} from "../Entities/User/UserEntity";
-import { Brackets, Repository } from 'typeorm';
-import { createNewPairGame, createViewPairGame, PairGame } from '../Entities/Quiz/PairGameEntity';
-import { BadRequestException, HttpException } from '@nestjs/common';
-import { createViewQuestion, Question } from '../Entities/Quiz/QuestionEntity';
+import { Brackets } from 'typeorm';
+import { createViewPairGame, PairGame } from '../Entities/Quiz/PairGameEntity';
+import { HttpException } from '@nestjs/common';
+import { Question } from '../Entities/Quiz/QuestionEntity';
 import { createDBGameQuestion, createViewGameQuestion } from '../Entities/Quiz/GameQuestionsEntity';
-import { createViewUserAnswer, UserAnswers } from '../Entities/Quiz/UserAnswersEntity';
+import { createUserAnswer, createViewUserAnswer, UserAnswers } from '../Entities/Quiz/UserAnswersEntity';
 import { createViewPlayerProgress } from '../Entities/Quiz/PlayerProgressEntity';
+import { EntityUtils } from './EntityUtils';
 
 export const gameUtils = {
 
@@ -42,6 +36,7 @@ export const gameUtils = {
       .createQueryBuilder('ua')
       .where('ua.ppId = :ppId',
         {ppId})
+      .orderBy('ua.addedAt', 'ASC')
       .getMany()
 
     return userAnswers.map(ua =>
@@ -55,12 +50,13 @@ export const gameUtils = {
         .leftJoinAndSelect('fpp.player', 'fp')
         .leftJoinAndSelect('game.secondPlayerProgress', 'spp')
         .leftJoinAndSelect('spp.player', 'sp')
+        .where(new Brackets(qb => {
+        qb.where('fp.id = :userId', {userId})
+          .orWhere('sp.id = :userId', {userId})
+        }))
   },
 
   async getViewGame(game: PairGame, userId, UserAnswersRepository, GameQuestionRepository) {
-    //
-    // if(!game.secondPlayerProgress) return console.log('second player null get game by id, game: ', game)
-
     const fPlayerId = game?.firstPlayerProgress.player.id
     const sPlayerId =
       game.secondPlayerProgress ?
@@ -71,22 +67,13 @@ export const gameUtils = {
     //@ts-ignore
     const sPlayerProgressId = game.secondPlayerProgress ? game!.secondPlayerProgress!.ppId! : null
 
-    // check that current user was playing current game
     if(fPlayerId !== userId && sPlayerId !== userId)
       throw new HttpException('Forbidden', 403);
 
-
-    // if we here, that mean gameId is correct
-    // and user is participant this game
-
-    // get answers for users to create view player progress later
     const firstUserAnswers =
       await gameUtils.getUserAnswers(UserAnswersRepository, fPlayerProgressId)
-
     const secondUserAnswers =
       await gameUtils.getUserAnswers(UserAnswersRepository, sPlayerProgressId)
-
-    // create view player progress
 
     const fpp =
       new createViewPlayerProgress(game!.firstPlayerProgress.score,
@@ -97,26 +84,19 @@ export const gameUtils = {
         secondUserAnswers, game.secondPlayerProgress.player)
       : null
 
-
-    const gameQuestions = await GameQuestionRepository
-      .createQueryBuilder('gq')
-      .leftJoinAndSelect('gq.game', 'game')
-      .where('game.id = :id', {id: game.id})
-      .getMany()
+    const gameQuestions =
+      await this.getQuestionsForExistingGame(game, GameQuestionRepository)
 
     let viewGameQuestions: createViewGameQuestion[] | null = []
 
     if(gameQuestions.length){
-      gameQuestions.map(gq => {
-        viewGameQuestions!.push(new createViewGameQuestion(gq.body, gq.questionId))
-      })
-    } else if (!gameQuestions.length) viewGameQuestions = null
+      gameQuestions.map(gq => viewGameQuestions!
+        .push(new createViewGameQuestion(gq.body, gq.questionId)))
+    }
+    else if (!gameQuestions.length) viewGameQuestions = null
 
-
-    const viewPairGame = new createViewPairGame(game.id, game.status, game.pairCreatedDate,
+    return new createViewPairGame(game.id, game.status, game.pairCreatedDate,
       game.startGameDate, game.finishGameDate, fpp, spp, viewGameQuestions)
-
-    return viewPairGame
   },
 
     async getRandomQuestions(questions: Question[], game: PairGame) {
@@ -171,56 +151,40 @@ export const gameUtils = {
       firstPlayerProgress
     }
   },
-  async finishGame(game, userId, UserAnswersRepository,
+  async finishGame(game, userId, currentPPID, UserAnswersRepository,
                    PairGameRepository, PlayerProgressRepository) {
 
       const secondPPID = game.firstPlayerProgress.player.id === userId ?
-        //@ts-ignore
         game.secondPlayerProgress!.ppId : game.firstPlayerProgress.ppId
 
     const firstUserAnswers: UserAnswers[] =
-      await UserAnswersRepository
-        .createQueryBuilder('sua')
-        .where('sua.ppId = :secondPPID', {secondPPID})
-        .getMany()
+      await this.getUserAnswers(UserAnswersRepository, currentPPID)
+    const secondUserAnswers: UserAnswers[] =
+      await this.getUserAnswers(UserAnswersRepository, secondPPID)
 
-      const secondUserAnswers: UserAnswers[] =
-        await UserAnswersRepository
-          .createQueryBuilder('sua')
-          .where('sua.ppId = :secondPPID', {secondPPID})
-          .getMany()
 
     const firstUserScore = firstUserAnswers
       .filter(a => a.answerStatus === 'Correct').length
-
-    const secondUserScore = firstUserAnswers
+    const secondUserScore = secondUserAnswers
       .filter(a => a.answerStatus === 'Correct').length
 
       if(secondUserAnswers.length === 5) {
+        let F_U_AddedPoint: boolean = false
+        let S_U_AddedPoint: boolean = false
 
-        // need to get all answers both users
+          if(firstUserAnswers[0].addedAt <
+            secondUserAnswers[0].addedAt)
+            S_U_AddedPoint = true
+          if(firstUserAnswers[0].addedAt >
+            secondUserAnswers[0].addedAt)
+            F_U_AddedPoint = true
 
-        const F_U_AddedPoint: boolean[] = []
-        const S_U_AddedPoint: boolean[] = []
-
-        for(let i = 0; i < 5; i++){
-          if(new Date(firstUserAnswers[i].addedAt) >
-            new Date(secondUserAnswers[i].addedAt)){
-            F_U_AddedPoint.push(false)
-            S_U_AddedPoint.push(true)
-          } else {
-            F_U_AddedPoint.push(true)
-            S_U_AddedPoint.push(false)
-          }
-        }
-
-        if(!F_U_AddedPoint.includes(false) && firstUserScore) {
-          console.log(F_U_AddedPoint);
+        if(F_U_AddedPoint && firstUserScore) {
           await PlayerProgressRepository
             .update({ppId: game.firstPlayerProgress.ppId},
               {score: () => 'score + 1'})
         }
-        else if(!S_U_AddedPoint.includes(false) && secondUserScore) {
+        if(S_U_AddedPoint && secondUserScore) {
           await PlayerProgressRepository
             .update({ppId: game.secondPlayerProgress.ppId},
               {score: () => 'score + 1'})
@@ -231,5 +195,95 @@ export const gameUtils = {
             { finishGameDate: new Date().toISOString(),
               status: 'Finished' });
       }
+    },
+
+    async getQuestionsForExistingGame(game, GameQuestionRepository) {
+      return await GameQuestionRepository
+        .createQueryBuilder("gq")
+        .leftJoinAndSelect("gq.game", 'game')
+        .where("game.id = :gameId", {gameId: game.id})
+        .getMany()
+    },
+
+    async connectSecondPlayerToGame(game, userId, DBSecondPlayerProgress, viewSecondPlayerProgress,
+                                  GameQuestionRepository, PairGameRepository,
+                                  PlayerProgressRepository, QuestionRepository) {
+      const startGameDate = new Date().toISOString()
+
+      if(game.firstPlayerProgress.player.id === userId)
+        throw new HttpException('Forbidden', 403)
+
+      const allQuestions =
+        await QuestionRepository
+          .createQueryBuilder("q")
+          .getMany()
+
+      const { viewQuestions, DBQuestions } =
+        await this.getRandomQuestions(allQuestions, game)
+
+      await GameQuestionRepository.save(DBQuestions)
+      await PlayerProgressRepository.save(DBSecondPlayerProgress)
+      await PairGameRepository
+        .update({status: 'PendingSecondPlayer'},
+          { secondPlayerProgress: DBSecondPlayerProgress,
+            startGameDate,
+            status: 'Active'
+          })
+
+
+      const firstPlayerProgress = await EntityUtils
+        .getPlayerProgress(PlayerProgressRepository, //@ts-ignore
+          game.firstPlayerProgress!.ppId!, [])
+
+      return new createViewPairGame(
+        game!.id, 'Active', game!.pairCreatedDate, startGameDate,
+        null, firstPlayerProgress,
+        viewSecondPlayerProgress, viewQuestions)
+    },
+
+    async connectFirstPlayerToGame(DBFirstPlayerProgress, viewFirstPlayerProgress,
+                                   PairGameRepository, PlayerProgressRepository) {
+      const id = uuid.v4()
+      const pairCreatedDate = new Date().toISOString()
+
+      await PlayerProgressRepository.save(DBFirstPlayerProgress)
+
+      const dbPG =
+        this.createDBPairGame(id, pairCreatedDate, DBFirstPlayerProgress)
+      await PairGameRepository.save(dbPG)
+
+      return this.createViewPairGame(id, pairCreatedDate, viewFirstPlayerProgress)
+    },
+
+    async addUserAnswer(game, userAnswers, answer, playerProgress,
+                        PlayerProgressRepository, CorrectAnswersRepository,
+                        UserAnswersRepository, GameQuestionRepository){
+      const gameQuestions = await this
+        .getQuestionsForExistingGame(game, GameQuestionRepository)
+
+      const currentQuestion = gameQuestions[userAnswers.length]
+
+      const correctAnswersDB =
+        await CorrectAnswersRepository
+          .createQueryBuilder("ca")
+          .where("ca.questionId = :questionId",
+            {questionId: currentQuestion.questionId})
+          .getMany()
+
+      const correctAnswersView: string[] = correctAnswersDB.map(ca => ca.answer)
+      const answerStatus = correctAnswersView.includes(answer, 0) ? 'Correct' : 'Incorrect'
+
+      const addedAt = new Date().toISOString()
+      const newAnswer = new createUserAnswer
+      (currentQuestion.questionId, answerStatus, addedAt, playerProgress.ppId)
+
+      await UserAnswersRepository.save(newAnswer)
+
+      if(answerStatus === 'Correct') await PlayerProgressRepository
+        .update({ppId: playerProgress.ppId},
+          {score: () => `score + 1`})
+
+      return new createViewUserAnswer
+      (currentQuestion.questionId, answerStatus, addedAt)
     }
 }

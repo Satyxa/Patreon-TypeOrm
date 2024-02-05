@@ -16,7 +16,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         } else if(status === 401) {
             return res.sendStatus(status)
         }
-        console.log('ExceptionFilter')
+
         return res.status(status).json({
             statusCode: status,
             timestamp: new Date().toISOString(),

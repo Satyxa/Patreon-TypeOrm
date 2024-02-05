@@ -65,8 +65,8 @@ export class UserService {
             login: AccountData.login
         })
 
-        await emailAdapter.sendEmail(email, 'Confirm your email',
-            EMAIL_CONF_MESSAGE(EmailConfirmation.confirmationCode))
+        // await emailAdapter.sendEmail(email, 'Confirm your email',
+        //     EMAIL_CONF_MESSAGE(EmailConfirmation.confirmationCode))
 
         return ViewUser
     }
