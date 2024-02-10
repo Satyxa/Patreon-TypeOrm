@@ -17,12 +17,12 @@ export class User {
     @OneToOne(() => EmailConfirmation)
     @JoinColumn()
     EmailConfirmation: EmailConfirmation
-    @OneToMany(() => Device, d => d.user)
+    @OneToMany(() => Device, d => d.user, { onDelete: 'CASCADE' })
     @JoinColumn()
     Devices: Device[]
     @Column({default: false, type: 'boolean'})
     deleted: boolean
-    @OneToOne(() => Statistic)
+    @OneToOne(() => Statistic, { onDelete: 'CASCADE' })
     statistic: Statistic
 }
 

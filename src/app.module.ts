@@ -47,6 +47,7 @@ import { PairGame } from './Entities/Quiz/PairGameEntity';
 import { GameController } from './Controllers/Game.controller';
 import { GameService } from './Services/Game.service';
 import { UserAnswers } from './Entities/Quiz/UserAnswersEntity';
+import { Statistic } from './Entities/User/StatisticEntity';
 
 @Module({
     imports: [
@@ -60,18 +61,18 @@ import { UserAnswers } from './Entities/Quiz/UserAnswersEntity';
             database: 'Patreon-typeorm',
             autoLoadEntities: true,
             synchronize: true,
-            // // ssl: true,
             entities: [User, EmailConfirmation, AccountData, Device,
                 TokenBlackList, Blog, Post, NewestLikes, ExtendedLikesInfo,
                 LikesInfo, Comment, CommentatorInfo, PostController,
                 CommentReactions, Question, Player, CorrectAnswers,
-                PlayerProgress, GameQuestions, PairGame, UserAnswers]
+                PlayerProgress, GameQuestions, PairGame, UserAnswers,
+                Statistic]
         }),
         TypeOrmModule.forFeature([User, EmailConfirmation,
             AccountData, Device, TokenBlackList, Blog, Post, NewestLikes,
             ExtendedLikesInfo, LikesInfo, Comment, CommentatorInfo, PostReactions,
             CommentReactions, Question, Player, CorrectAnswers, PlayerProgress,
-        PairGame, GameQuestions, UserAnswers]),
+        PairGame, GameQuestions, UserAnswers, Statistic]),
         UsersModule,
         ThrottlerModule.forRoot([{
             ttl: 60000,

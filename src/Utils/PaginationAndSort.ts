@@ -65,18 +65,19 @@ export const pairsPS = async (payload, userId, query) => {
 
     const pairs = await query
         .where(new Brackets(qb => {
-            qb.where('fpl.userId = :userId', {userId})
-              .orWhere('spl.userId = :userId', {userId})
+            qb.where('fpl.id = :userId', {userId})
+              .orWhere('spl.id = :userId', {userId})
         }))
-        .orderBy(`q.${sortBy}`, `${sortDirection.toUpperCase()}`)
+        .orderBy(`game.${sortBy}`, `${sortDirection.toUpperCase()}`)
+        .addOrderBy(`game.pairCreatedDate`, `DESC`)
         .limit(pageSize)
         .offset(offset)
         .getMany()
 
     const totalCount = await query
       .where(new Brackets(qb => {
-        qb.where('fpl.userId = :userId', {userId})
-          .orWhere('spl.userId = :userId', {userId})
+        qb.where('fpl.id = :userId', {userId})
+          .orWhere('spl.id = :userId', {userId})
         }))
       .getCount()
 

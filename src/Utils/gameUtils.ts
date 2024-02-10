@@ -152,7 +152,8 @@ export const gameUtils = {
     }
   },
   async finishGame(game, userId, currentPPID, UserAnswersRepository,
-                   PairGameRepository, PlayerProgressRepository) {
+                   PairGameRepository, PlayerProgressRepository,
+                   StatisticRepository) {
 
       const secondPPID = game.firstPlayerProgress.player.id === userId ?
         game.secondPlayerProgress!.ppId : game.firstPlayerProgress.ppId
@@ -194,6 +195,51 @@ export const gameUtils = {
           .update({ id: game.id },
             { finishGameDate: new Date().toISOString(),
               status: 'Finished' });
+
+        // update statistic
+
+        const gameQuery = await this.getGameQuery(PairGameRepository)
+        const finishedGame = await gameQuery
+          .where('game.id = :id', {id: game.id})
+          .getOne()
+
+        // -   "avgScores": 2.43,
+        // -   "drawsCount": 1,
+        // -   "gamesCount": 7, ----
+        // -   "lossesCount": 3,
+        // -   "sumScore": 17, ----
+        // -   "winsCount": 3,
+
+        const isNoWinner =
+          finishedGame.firstPlayerProgress.score === finishedGame.secondPlayerProgress.score
+
+        const firstWinner =
+          (finishedGame.firstPlayerProgress.score > finishedGame.secondPlayerProgress.score)
+
+        const secondWinner =
+          (finishedGame.firstPlayerProgress.score < finishedGame.secondPlayerProgress.score)
+
+        await StatisticRepository.update(
+          {userId: game.firstPlayerProgress.player.id},
+          {sumScore: () => `sumScore + ${finishedGame.firstPlayerProgress.score}`,
+            winsCount: () =>  firstWinner ? `winsCount + 1` : `winsCount + 0`,
+             lossesCount: () => secondWinner ? `lossesCount + 1` : `lossesCount + 0`,
+              drawsCount: () => !firstWinner && !secondWinner ? `drawsCount + 1` : `drawsCount + 0`,
+               gamesCount: () => `gamesCount + 1`
+           }
+        )
+
+        await StatisticRepository.update(
+          {userId: game.secondPlayerProgress.player.id},
+          {sumScore: () => `sumScore + ${finishedGame.secondPlayerProgress.score}`,
+            winsCount: () =>  secondWinner ? `winsCount + 1` : `winsCount + 0`,
+            lossesCount: () => firstWinner ? `lossesCount + 1` : `lossesCount + 0`,
+            drawsCount: () => !firstWinner && !secondWinner ? `drawsCount + 1` : `drawsCount + 0`,
+            gamesCount: () => `gamesCount + 1`
+          }
+        )
+
+
       }
     },
 
@@ -285,5 +331,5 @@ export const gameUtils = {
 
       return new createViewUserAnswer
       (currentQuestion.questionId, answerStatus, addedAt)
-    }
+    },
 }

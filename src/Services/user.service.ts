@@ -12,6 +12,7 @@ import {EmailConfirmation} from "../Entities/User/EmailConfirmationEntity";
 import {CheckEntityId, findEntityBy} from "../Utils/checkEntityId";
 import {EMAIL_CONF_MESSAGE} from "../Constants";
 import { Player } from '../Entities/Quiz/PlayerEntity';
+import { Statistic } from '../Entities/User/StatisticEntity';
 
 @Injectable()
 export class UserService {
@@ -23,7 +24,9 @@ export class UserService {
                 private readonly EmailConfirmationRepository: Repository<EmailConfirmation>,
                 @InjectRepository(Player)
                 private readonly PlayerRepository: Repository<Player>,
-                @InjectDataSource() private readonly dataSource: DataSource,) {
+                @InjectDataSource() private readonly dataSource: DataSource,
+                @InjectRepository(Statistic)
+                private readonly StatisticRepository: Repository<Statistic>) {
     }
 
     async deleteAll() {
@@ -64,6 +67,8 @@ export class UserService {
             id: User.id,
             login: AccountData.login
         })
+
+        await this.StatisticRepository.save(EntityUtils.createNewStatistic(User.id))
 
         // await emailAdapter.sendEmail(email, 'Confirm your email',
         //     EMAIL_CONF_MESSAGE(EmailConfirmation.confirmationCode))

@@ -1,10 +1,11 @@
-import { Column, Entity, Generated, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Generated, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Question } from './QuestionEntity';
 import { PlayerProgress } from './PlayerProgressEntity';
 
 @Entity()
 export class UserAnswers {
   @ManyToOne(() => PlayerProgress, { onDelete: 'CASCADE' })
+  @JoinColumn()
   ppId: string
   @Column('uuid')
   questionId: string
