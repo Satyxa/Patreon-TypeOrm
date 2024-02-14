@@ -7,6 +7,8 @@ import { createDBGameQuestion, createViewGameQuestion } from '../Entities/Quiz/G
 import { createUserAnswer, createViewUserAnswer, UserAnswers } from '../Entities/Quiz/UserAnswersEntity';
 import { createViewPlayerProgress } from '../Entities/Quiz/PlayerProgressEntity';
 import { EntityUtils } from './EntityUtils';
+import { Statistic } from '../Entities/User/StatisticEntity';
+import { addSeconds } from 'date-fns';
 
 export const gameUtils = {
 
@@ -151,97 +153,6 @@ export const gameUtils = {
       firstPlayerProgress
     }
   },
-  async finishGame(game, userId, currentPPID, UserAnswersRepository,
-                   PairGameRepository, PlayerProgressRepository,
-                   StatisticRepository) {
-
-      const secondPPID = game.firstPlayerProgress.player.id === userId ?
-        game.secondPlayerProgress!.ppId : game.firstPlayerProgress.ppId
-
-    const firstUserAnswers: UserAnswers[] =
-      await this.getUserAnswers(UserAnswersRepository, currentPPID)
-    const secondUserAnswers: UserAnswers[] =
-      await this.getUserAnswers(UserAnswersRepository, secondPPID)
-
-
-    const firstUserScore = firstUserAnswers
-      .filter(a => a.answerStatus === 'Correct').length
-    const secondUserScore = secondUserAnswers
-      .filter(a => a.answerStatus === 'Correct').length
-
-      if(secondUserAnswers.length === 5) {
-        let F_U_AddedPoint: boolean = false
-        let S_U_AddedPoint: boolean = false
-
-          if(firstUserAnswers[0].addedAt <
-            secondUserAnswers[0].addedAt)
-            S_U_AddedPoint = true
-          if(firstUserAnswers[0].addedAt >
-            secondUserAnswers[0].addedAt)
-            F_U_AddedPoint = true
-
-        if(F_U_AddedPoint && firstUserScore) {
-          await PlayerProgressRepository
-            .update({ppId: game.firstPlayerProgress.ppId},
-              {score: () => 'score + 1'})
-        }
-        if(S_U_AddedPoint && secondUserScore) {
-          await PlayerProgressRepository
-            .update({ppId: game.secondPlayerProgress.ppId},
-              {score: () => 'score + 1'})
-        }
-
-        await PairGameRepository
-          .update({ id: game.id },
-            { finishGameDate: new Date().toISOString(),
-              status: 'Finished' });
-
-        // update statistic
-
-        const gameQuery = await this.getGameQuery(PairGameRepository)
-        const finishedGame = await gameQuery
-          .where('game.id = :id', {id: game.id})
-          .getOne()
-
-        // -   "avgScores": 2.43,
-        // -   "drawsCount": 1,
-        // -   "gamesCount": 7, ----
-        // -   "lossesCount": 3,
-        // -   "sumScore": 17, ----
-        // -   "winsCount": 3,
-
-        const isNoWinner =
-          finishedGame.firstPlayerProgress.score === finishedGame.secondPlayerProgress.score
-
-        const firstWinner =
-          (finishedGame.firstPlayerProgress.score > finishedGame.secondPlayerProgress.score)
-
-        const secondWinner =
-          (finishedGame.firstPlayerProgress.score < finishedGame.secondPlayerProgress.score)
-
-        await StatisticRepository.update(
-          {userId: game.firstPlayerProgress.player.id},
-          {sumScore: () => `sumScore + ${finishedGame.firstPlayerProgress.score}`,
-            winsCount: () =>  firstWinner ? `winsCount + 1` : `winsCount + 0`,
-             lossesCount: () => secondWinner ? `lossesCount + 1` : `lossesCount + 0`,
-              drawsCount: () => !firstWinner && !secondWinner ? `drawsCount + 1` : `drawsCount + 0`,
-               gamesCount: () => `gamesCount + 1`
-           }
-        )
-
-        await StatisticRepository.update(
-          {userId: game.secondPlayerProgress.player.id},
-          {sumScore: () => `sumScore + ${finishedGame.secondPlayerProgress.score}`,
-            winsCount: () =>  secondWinner ? `winsCount + 1` : `winsCount + 0`,
-            lossesCount: () => firstWinner ? `lossesCount + 1` : `lossesCount + 0`,
-            drawsCount: () => !firstWinner && !secondWinner ? `drawsCount + 1` : `drawsCount + 0`,
-            gamesCount: () => `gamesCount + 1`
-          }
-        )
-
-
-      }
-    },
 
     async getQuestionsForExistingGame(game, GameQuestionRepository) {
       return await GameQuestionRepository
@@ -251,85 +162,22 @@ export const gameUtils = {
         .getMany()
     },
 
-    async connectSecondPlayerToGame(game, userId, DBSecondPlayerProgress, viewSecondPlayerProgress,
-                                  GameQuestionRepository, PairGameRepository,
-                                  PlayerProgressRepository, QuestionRepository) {
-      const startGameDate = new Date().toISOString()
+  async addPoint(PlayerProgressRepository, ppId) {
+    await PlayerProgressRepository
+      .update(ppId,
+        {score: () => 'score + 1'})
+  },
 
-      if(game.firstPlayerProgress.player.id === userId)
-        throw new HttpException('Forbidden', 403)
-
-      const allQuestions =
-        await QuestionRepository
-          .createQueryBuilder("q")
-          .getMany()
-
-      const { viewQuestions, DBQuestions } =
-        await this.getRandomQuestions(allQuestions, game)
-
-      await GameQuestionRepository.save(DBQuestions)
-      await PlayerProgressRepository.save(DBSecondPlayerProgress)
-      await PairGameRepository
-        .update({status: 'PendingSecondPlayer'},
-          { secondPlayerProgress: DBSecondPlayerProgress,
-            startGameDate,
-            status: 'Active'
-          })
-
-
-      const firstPlayerProgress = await EntityUtils
-        .getPlayerProgress(PlayerProgressRepository, //@ts-ignore
-          game.firstPlayerProgress!.ppId!, [])
-
-      return new createViewPairGame(
-        game!.id, 'Active', game!.pairCreatedDate, startGameDate,
-        null, firstPlayerProgress,
-        viewSecondPlayerProgress, viewQuestions)
-    },
-
-    async connectFirstPlayerToGame(DBFirstPlayerProgress, viewFirstPlayerProgress,
-                                   PairGameRepository, PlayerProgressRepository) {
-      const id = uuid.v4()
-      const pairCreatedDate = new Date().toISOString()
-
-      await PlayerProgressRepository.save(DBFirstPlayerProgress)
-
-      const dbPG =
-        this.createDBPairGame(id, pairCreatedDate, DBFirstPlayerProgress)
-      await PairGameRepository.save(dbPG)
-
-      return this.createViewPairGame(id, pairCreatedDate, viewFirstPlayerProgress)
-    },
-
-    async addUserAnswer(game, userAnswers, answer, playerProgress,
-                        PlayerProgressRepository, CorrectAnswersRepository,
-                        UserAnswersRepository, GameQuestionRepository){
-      const gameQuestions = await this
-        .getQuestionsForExistingGame(game, GameQuestionRepository)
-
-      const currentQuestion = gameQuestions[userAnswers.length]
-
-      const correctAnswersDB =
-        await CorrectAnswersRepository
-          .createQueryBuilder("ca")
-          .where("ca.questionId = :questionId",
-            {questionId: currentQuestion.questionId})
-          .getMany()
-
-      const correctAnswersView: string[] = correctAnswersDB.map(ca => ca.answer)
-      const answerStatus = correctAnswersView.includes(answer, 0) ? 'Correct' : 'Incorrect'
-
-      const addedAt = new Date().toISOString()
-      const newAnswer = new createUserAnswer
-      (currentQuestion.questionId, answerStatus, addedAt, playerProgress.ppId)
-
-      await UserAnswersRepository.save(newAnswer)
-
-      if(answerStatus === 'Correct') await PlayerProgressRepository
-        .update({ppId: playerProgress.ppId},
-          {score: () => `score + 1`})
-
-      return new createViewUserAnswer
-      (currentQuestion.questionId, answerStatus, addedAt)
-    },
+  async updateStatistic(StatisticRepository, pId, finishedGame,
+                        firstWinner, secondWinner) {
+    await StatisticRepository.update(
+      {userId: pId},
+      {sumScore: () => `sumScore + ${finishedGame.firstPlayerProgress.score}`,
+        winsCount: () =>  firstWinner ? `winsCount + 1` : `winsCount + 0`,
+        lossesCount: () => secondWinner ? `lossesCount + 1` : `lossesCount + 0`,
+        drawsCount: () => !firstWinner && !secondWinner ? `drawsCount + 1` : `drawsCount + 0`,
+        gamesCount: () => `gamesCount + 1`,
+      }
+    )
+  }
 }

@@ -7,10 +7,11 @@ import {AccountData} from "../Entities/User/AccountDataEntity";
 import {EmailConfirmation} from "../Entities/User/EmailConfirmationEntity";
 import { Player } from '../Entities/Quiz/PlayerEntity';
 import { Statistic } from '../Entities/User/StatisticEntity';
+import { TokenBlackList } from '../Entities/Token/TokenBlackListEntity';
 
 @Module({
     imports: [TypeOrmModule.forFeature([
-      User, AccountData, EmailConfirmation, Player, Statistic])],
+      User, AccountData, EmailConfirmation, Player, Statistic, TokenBlackList])],
     providers: [UserService],
     controllers: [UserController],
 })

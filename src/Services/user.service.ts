@@ -12,7 +12,8 @@ import {EmailConfirmation} from "../Entities/User/EmailConfirmationEntity";
 import {CheckEntityId, findEntityBy} from "../Utils/checkEntityId";
 import {EMAIL_CONF_MESSAGE} from "../Constants";
 import { Player } from '../Entities/Quiz/PlayerEntity';
-import { Statistic } from '../Entities/User/StatisticEntity';
+import { createViewStatistic, Statistic } from '../Entities/User/StatisticEntity';
+import { TokenBlackList } from '../Entities/Token/TokenBlackListEntity';
 
 @Injectable()
 export class UserService {
@@ -26,7 +27,9 @@ export class UserService {
                 private readonly PlayerRepository: Repository<Player>,
                 @InjectDataSource() private readonly dataSource: DataSource,
                 @InjectRepository(Statistic)
-                private readonly StatisticRepository: Repository<Statistic>) {
+                private readonly StatisticRepository: Repository<Statistic>,
+                @InjectRepository(TokenBlackList)
+                private readonly TokenBlackListRep: Repository<TokenBlackList>) {
     }
 
     async deleteAll() {
@@ -63,12 +66,14 @@ export class UserService {
         await this.EmailConfirmationRepository.save(EmailConfirmation)
         await this.UserRepository.save(User)
 
-        await this.PlayerRepository.save({
+        const player = {
             id: User.id,
             login: AccountData.login
-        })
+        }
 
-        await this.StatisticRepository.save(EntityUtils.createNewStatistic(User.id))
+        await this.PlayerRepository.save(player)
+
+        await this.StatisticRepository.save(EntityUtils.createNewStatistic(User.id, player))
 
         // await emailAdapter.sendEmail(email, 'Confirm your email',
         //     EMAIL_CONF_MESSAGE(EmailConfirmation.confirmationCode))

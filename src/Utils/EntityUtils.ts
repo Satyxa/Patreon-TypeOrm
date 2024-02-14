@@ -165,14 +165,16 @@ export const EntityUtils = {
         return new createViewPlayerProgress(pp.score, userAnswers, pp.player)
     },
 
-    createNewStatistic: (userId) => {
+    createNewStatistic: (userId, player) => {
         return {
             userId,
+            avgScores: 0,
             sumScore: 0,
             gamesCount: 0,
             winsCount: 0,
             lossesCount: 0,
-            drawsCount: 0
+            drawsCount: 0,
+            player
         }
     }
 }

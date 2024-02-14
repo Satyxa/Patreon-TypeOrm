@@ -16,8 +16,11 @@ import { EntityUtils } from '../Utils/EntityUtils';
 import { CheckEntityId } from '../Utils/checkEntityId';
 import { createUserAnswer, createViewUserAnswer, UserAnswers } from '../Entities/Quiz/UserAnswersEntity';
 import { getLogger } from 'nodemailer/lib/shared';
-import { pairsPS } from '../Utils/PaginationAndSort';
-import { createViewStatistic, Statistic } from '../Entities/User/StatisticEntity';
+import { getValuesPS, pairsPS } from '../Utils/PaginationAndSort';
+import { createStatisticForTop, createViewStatistic, Statistic } from '../Entities/User/StatisticEntity';
+import { TOPQueryPayload } from '../Controllers/Game.controller';
+import { addSeconds } from 'date-fns';
+import { gameMethods } from '../Utils/game.methods';
 
 @Injectable()
 export class GameService {
@@ -92,13 +95,13 @@ export class GameService {
       new createViewPlayerProgress(0, [], player!);
 
     if (game) {
-      return await gameUtils.connectSecondPlayerToGame(
+      return await gameMethods.connectSecondPlayerToGame(
         game, userId, DBPlayerProgress, viewPlayerProgress,
         this.GameQuestionRepository, this.PairGameRepository,
         this.PlayerProgressRepository, this.QuestionRepository,
       );
     } else if (!game) {
-      return await gameUtils.connectFirstPlayerToGame(
+      return await gameMethods.connectFirstPlayerToGame(
         DBPlayerProgress, viewPlayerProgress,
         this.PairGameRepository, this.PlayerProgressRepository,
       );
@@ -113,30 +116,45 @@ export class GameService {
 
     if (!game) throw new HttpException('Forbidden', 403);
 
-    const playerProgress: PlayerProgress =
+    const currentPlayerProgress: PlayerProgress =
       game.firstPlayerProgress.player.id === userId
         ? game.firstPlayerProgress as PlayerProgress
         : game.secondPlayerProgress as PlayerProgress;
 
-    const userAnswers =
-      await gameUtils.getUserAnswers(this.UserAnswersRepository, playerProgress.ppId);
+    const enemyPlayerProgress: PlayerProgress =
+      game.firstPlayerProgress.player.id === userId
+        ? game.secondPlayerProgress as PlayerProgress
+        : game.firstPlayerProgress as PlayerProgress
 
-    if (userAnswers.length === 5)
+
+    const currentPlayerAnswers =
+      await gameUtils.getUserAnswers(this.UserAnswersRepository, currentPlayerProgress.ppId);
+
+    const enemyPlayerAnswers =
+      await gameUtils.getUserAnswers(this.UserAnswersRepository, enemyPlayerProgress.ppId);
+
+    if (currentPlayerAnswers.length === 5)
       throw new HttpException('Forbidden', 403);
 
-    const viewUserAnswer =
-      await gameUtils.addUserAnswer(
-        game, userAnswers, answer, playerProgress,
+    const viewPlayerAnswer =
+      await gameMethods.addUserAnswer(
+        game, currentPlayerAnswers, answer, currentPlayerProgress,
         this.PlayerProgressRepository, this.CorrectAnswersRepository,
         this.UserAnswersRepository, this.GameQuestionRepository);
 
-    if (userAnswers.length === 4)
-      await gameUtils.finishGame(
-        game, userId, playerProgress.ppId,
-        this.UserAnswersRepository, this.PairGameRepository,
-        this.PlayerProgressRepository, this.StatisticRepository);
+    if (currentPlayerAnswers.length === 4 && enemyPlayerAnswers.length < 5) {
 
-    return viewUserAnswer;
+       setTimeout(() => {
+         gameMethods.finishGame(
+           game, currentPlayerProgress.ppId, enemyPlayerProgress.ppId,
+           this.UserAnswersRepository, this.PairGameRepository,
+           this.PlayerProgressRepository, this.StatisticRepository,
+           this.GameQuestionRepository);
+       }, 10000)
+    }
+
+
+    return viewPlayerAnswer;
   }
 
   async getMe(payload, userId) {
@@ -198,7 +216,7 @@ export class GameService {
         return gq.game.id === game.id
           //@ts-ignore
           ? gameQuestions.push(new createViewGameQuestion(gq.body, gq.questionId))
-          : null;
+          : null
       });
 
       const pg = new createViewPairGame(
@@ -226,6 +244,56 @@ export class GameService {
 
     return new createViewStatistic(statistic.sumScore, statistic.gamesCount,
       statistic.winsCount, statistic.drawsCount, statistic.lossesCount)
+  }
+
+  async getUsersTop(payload: TOPQueryPayload) {
+
+    const {pageSize, pageNumber, sort} = getValuesPS(payload)
+
+
+    const offset = pageSize * pageNumber - pageSize
+
+    const order = {}
+    if(sort.length) {
+
+      if(!Array.isArray(sort)) {
+        const splitterString = sort.split(' ')
+        order[splitterString[0]] = splitterString[1].toUpperCase()
+      }
+
+      if(Array.isArray(sort)){
+        for (let i = 0; i < sort.length; i++) {
+          const splitterValue = sort[i].split(' ');
+          order[splitterValue[0]] = splitterValue[1].toUpperCase();
+        }
+      }
+    }
+
+
+    const statisticDB = await this.StatisticRepository
+      .find({
+        order,
+        relations: {
+          player: true
+        },
+        take: pageSize,
+        skip: offset
+      })
+
+    const totalCount = await this.StatisticRepository
+      .find({})
+
+    const pagesCount = Math.ceil(totalCount.length / pageSize)
+
+    const statistic = statisticDB.map(stat =>
+      new createStatisticForTop(stat.sumScore, stat.gamesCount,
+        stat.winsCount, stat.drawsCount, stat.lossesCount, stat.player))
+
+    return ({
+      pagesCount, page: pageNumber, pageSize,
+      totalCount: totalCount.length, items: statistic,
+    });
+
   }
 
 }

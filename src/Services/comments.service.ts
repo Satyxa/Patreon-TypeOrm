@@ -52,8 +52,7 @@ export class CommentsService {
 
   async updateCommentContent(id, userId, content) {
     const comment: commentsSQL = await CheckEntityId.checkCommentId(
-      this.CommentRepository,
-      id,
+      this.CommentRepository, id,
     );
     if (userId !== comment.CommentatorInfo.userId)
       throw new HttpException('FORBIDDEN', 403);

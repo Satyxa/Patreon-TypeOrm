@@ -23,6 +23,12 @@ type queryPayload = {
     sortDirection: string
 }
 
+export type TOPQueryPayload = {
+    pageNumber: number,
+    pageSize: number,
+    sort: string
+}
+
 @Controller('pair-game-quiz')
 export class GameController {
     constructor(private readonly GameService: GameService) {}
@@ -67,5 +73,10 @@ export class GameController {
     @Get('users/my-statistic')
     async getCurrentUserStatistic(@Req() req: any){
         return await this.GameService.getStatistic(req.userId)
+    }
+
+    @Get('users/top')
+    async getUsersTop(@Query() payload: TOPQueryPayload){
+        return await this.GameService.getUsersTop(payload)
     }
 }

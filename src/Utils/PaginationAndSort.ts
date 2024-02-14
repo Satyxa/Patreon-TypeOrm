@@ -4,7 +4,7 @@ import {deleted} from "../Constants";
 export const getValuesPS = (payload) => {
     let {pageNumber, pageSize, sortBy, searchLoginTerm,
         searchEmailTerm, sortDirection, bodySearchTerm,
-        searchNameTerm, publishedStatus} = payload
+        searchNameTerm, publishedStatus, sort} = payload
     if (!searchLoginTerm && !searchEmailTerm) {
         searchEmailTerm = ''
         searchLoginTerm = ''
@@ -19,6 +19,7 @@ export const getValuesPS = (payload) => {
         bodySearchTerm: bodySearchTerm ?? '',
         publishedStatus: publishedStatus ?? 'all',
         sortDirection: sortDirection ?? 'DESC' as 'ASC' | 'DESC' | undefined,
+        sort: sort ?? []
     }
 }
 
