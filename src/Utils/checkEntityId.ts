@@ -1,16 +1,16 @@
 import {BadRequestException, HttpException, UnauthorizedException} from "@nestjs/common";
-import {User} from "../Entities/User/UserEntity";
+import {User} from "../Entities/User/User.entity";
 import {Brackets, Repository} from "typeorm";
-import {Post} from "../Entities/Posts/PostEntity";
+import {Post} from "../Entities/Posts/Post.entity";
 import {deleted} from "../Constants";
-import {Blog} from "../Entities/BlogEntity";
+import {Blog} from "../Entities/Blog/Blog.entity";
 
 export const CheckEntityId = {
     checkBlogId: async (BlogRepository, blogId, message) => {
         const blog: Blog | null = await BlogRepository
             .createQueryBuilder("b")
+          .leftJoinAndSelect("b.AccountData", "ac")
             .where("b.id = :blogId", {blogId})
-            .andWhere("b.deleted = :deleted", {deleted})
             .getOne()
         if (!blog) {
             if(message === 'for post') throw new BadRequestException(
@@ -18,8 +18,7 @@ export const CheckEntityId = {
             else throw new HttpException('Not Found', 404)
         }
         else {
-            const {deleted, ...viewBlog} = blog
-            return viewBlog
+            return blog
         }
     },
     checkPostId: async (PostRepository: Repository<Post>, postId) => {
@@ -27,8 +26,6 @@ export const CheckEntityId = {
             .createQueryBuilder("p")
             .leftJoinAndSelect("p.blog", "b")
             .where("p.id = :postId", {postId})
-            .andWhere("p.deleted = :deleted",
-                {deleted})
             .getOne()
         if (!post) throw new HttpException('Not Found', 404)
 
@@ -39,8 +36,8 @@ export const CheckEntityId = {
             .createQueryBuilder("u")
             .leftJoinAndSelect("u.AccountData", "ac")
             .leftJoinAndSelect("u.EmailConfirmation", "ec")
+            .leftJoinAndSelect("u.banInfo", "ban")
             .where("u.id = :userId", {userId})
-            .andWhere("u.deleted = :deleted", {deleted})
             .getOne()
         if (!user) throw new HttpException('Not Found', 404)
         else return user
@@ -52,7 +49,6 @@ export const CheckEntityId = {
             .leftJoinAndSelect("c.CommentatorInfo", "ci")
             .leftJoinAndSelect("c.LikesInfo", "li")
             .where("c.id = :commentId", {commentId})
-            .andWhere("c.deleted = :deleted", {deleted})
             .getOne()
         if (!comment) throw new HttpException('Not Found', 404)
         else return comment
@@ -105,8 +101,8 @@ export const findEntityBy = {
         const foundUser: User | null = await UserRepository
             .createQueryBuilder("u")
             .leftJoinAndSelect("u.AccountData", "ac")
-            .where("u.deleted = :deleted", {deleted})
-            .andWhere(new Brackets(qb => {
+            .leftJoinAndSelect('u.banInfo', 'ban')
+            .where(new Brackets(qb => {
                 qb.where("ac.login = :loginOrEmail", {loginOrEmail})
                     .orWhere("ac.email = :loginOrEmail", {loginOrEmail})
             }))

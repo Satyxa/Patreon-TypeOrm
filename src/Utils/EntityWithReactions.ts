@@ -9,6 +9,7 @@ export const EntityWithReactions = {
         const newestLikes =
             await NewestLikesRepository.createQueryBuilder("n")
                 .leftJoinAndSelect("n.postId", "p")
+                .where('n.banned = :banned', {banned: false})
                 .orderBy(`n.addedAt`, `DESC`)
                 .getMany()
 

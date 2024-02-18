@@ -1,14 +1,14 @@
 import {Controller, Delete, Get, HttpCode} from '@nestjs/common';
 import { AppService } from './app.service';
-import { UserService } from "./Services/user.service";
-import {DevicesService} from "./Services/devices.service";
-import {BlogService} from "./Services/blogs.service";
-import {PostService} from "./Services/posts.service";
-import {CommentsService} from "./Services/comments.service";
+import { UserService } from "./Services/User/user.service";
+import {DevicesService} from "./Services/User/devices.service";
+import {BlogService} from "./Services/Blogs/blogs.service";
+import {PostService} from "./Services/Posts/posts.service";
+import {CommentsService} from "./Services/Posts/comments.service";
 import {InjectDataSource} from "@nestjs/typeorm";
 import {DataSource} from "typeorm";
-import {QuizService} from "./Services/Quiz.service";
-import { GameService } from './Services/Game.service';
+import {QuestionService} from "./Services/Game/Question.service";
+import { GameService } from './Services/Game/Game.service';
 
 @Controller()
 export class AppController {
@@ -19,7 +19,7 @@ export class AppController {
       private readonly BlogService: BlogService,
       private readonly PostService: PostService,
       private readonly CommentsService: CommentsService,
-      private readonly QuizService: QuizService,
+      private readonly QuizService: QuestionService,
       @InjectDataSource() protected dataSource: DataSource,
       private readonly GameService: GameService
   ) {}

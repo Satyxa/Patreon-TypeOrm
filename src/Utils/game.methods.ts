@@ -1,10 +1,10 @@
 import { HttpException } from '@nestjs/common';
-import { EntityUtils } from './EntityUtils';
-import { createViewPairGame } from '../Entities/Quiz/PairGameEntity';
+import { EntityUtils } from './Entity.utils';
+import { createViewPairGame } from '../Entities/Quiz/PairGame.entity';
 import * as uuid from 'uuid';
-import { gameUtils } from './gameUtils';
-import { createUserAnswer, createViewUserAnswer, UserAnswers } from '../Entities/Quiz/UserAnswersEntity';
-import { Statistic } from '../Entities/User/StatisticEntity';
+import { gameUtils } from './game.utils';
+import { createUserAnswer, createViewUserAnswer, UserAnswers } from '../Entities/Quiz/UserAnswers.entity';
+import { Statistic } from '../Entities/User/Statistic.entity';
 
 export const gameMethods = {
   async finishGame(game, currentPPId, enemyPPId, UserAnswersRepository,

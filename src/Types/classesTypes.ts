@@ -1,5 +1,5 @@
 import {
-    Equals,
+    Equals, IsBoolean, isBoolean,
     IsEmail,
     IsIn,
     isIn, isNotEmpty,
@@ -107,4 +107,22 @@ export class sendAnswerPayload {
 export class validId {
     @IsUUID()
     id: string
+}
+
+export class UserBannedStatusPayload {
+    @IsBoolean()
+    isBanned: boolean
+    @IsString()
+    @Length(20)
+    banReason: string
+}
+
+export class BlogUserBannedStatusPayload {
+    @IsBoolean()
+    isBanned: boolean
+    @IsString()
+    @Length(20)
+    banReason: string
+    @IsString()
+    blogId: string
 }
