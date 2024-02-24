@@ -141,7 +141,8 @@ export class PostService {
         const post = await CheckEntityId.checkPostId(this.PostRepository, id)
         const user: User = await CheckEntityId.checkUserId(this.UserRepository, userId)
 
-        if(await this.BlogBannedUsersRepository.findOneBy({blogId: post.blog, userId}))
+        //@ts-ignore
+        if(await this.BlogBannedUsersRepository.findOneBy({blogId: post.blog.id, userId}))
             throw new HttpException('Forbidden', 403)
 
         const commentId = uuid.v4()

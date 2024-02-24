@@ -19,8 +19,6 @@ export class Comment {
     @OneToOne(() => LikesInfo, { onDelete: 'CASCADE' })
     @JoinColumn()
     LikesInfo: LikesInfo
-    @Column({type: 'boolean', default: false})
-    deleted: boolean
     @ManyToOne(() => Post, { onDelete: 'CASCADE' })
     @JoinColumn()
     post: Post

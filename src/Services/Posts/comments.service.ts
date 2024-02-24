@@ -53,7 +53,7 @@ export class CommentsService {
     if (userId !== comment.CommentatorInfo.userId)
       throw new HttpException('FORBIDDEN', 403);
 
-    await this.CommentRepository.update({ id }, { deleted: true });
+    await this.CommentRepository.delete({ id });
   }
 
   async updateCommentContent(id, userId, content) {

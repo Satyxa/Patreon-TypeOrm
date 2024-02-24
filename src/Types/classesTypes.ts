@@ -126,3 +126,8 @@ export class BlogUserBannedStatusPayload {
     @IsString()
     blogId: string
 }
+
+export class BanBlogPayload {
+    @IsBoolean()
+    isBanned: boolean
+}

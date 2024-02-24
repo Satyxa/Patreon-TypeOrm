@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGene
 import {Post} from "../Posts/Post.entity";
 import { User } from '../User/User.entity';
 import { AccountData } from '../User/AccountData.entity';
+import { BlogBanInfo, createBlogBanInfo } from './BlogBanInfo.entity';
 
 
 @Entity()
@@ -26,6 +27,9 @@ export class Blog {
       { onDelete: 'CASCADE', nullable: true })
     @JoinColumn()
     AccountData: AccountData
+    @OneToOne(() => BlogBanInfo, { onDelete: 'CASCADE' })
+    @JoinColumn()
+    banInfo: BlogBanInfo
 }
 
 export class createBlog {
@@ -35,5 +39,6 @@ export class createBlog {
                 public description: string,
                 public websiteUrl: string,
                 public createdAt: string,
-                public AccountData: AccountData) {}
+                public AccountData: AccountData,
+                public banInfo: createBlogBanInfo) {}
 }

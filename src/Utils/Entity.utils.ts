@@ -100,7 +100,8 @@ export const EntityUtils = {
 
         return EntityUtils.GetPost(Post, [], [], [], '')
     },
-    createViewComment: (comment, userId: string, reactions: commentsReactionsT[]) => {
+    createViewComment: (comment, userId: string, reactions: commentsReactionsT[], postInfo: any[] | null = null) => {
+        console.log(comment);
         return {
             id: comment.id,
             content: comment.content,
@@ -119,7 +120,8 @@ export const EntityUtils = {
                     }
                     return ac
                 }, 'None')
-            }
+            },
+            postInfo: postInfo ? postInfo.find(p => p.id === comment.postId) : null
         }
     },
     checkTokenInBL: async (TokenBlackListRepository, refreshToken) => {

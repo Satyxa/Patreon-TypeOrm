@@ -50,7 +50,7 @@ export class BlogService {
     async getPostsForBlog(id, payload, headers, path = 'all') {
         const userId = await getUserId(headers)
         const blog = await CheckEntityId
-          .checkBlogId(this.BlogRepository, id, 'for post')
+          .checkBlogId(this.BlogRepository, id, 'for blog')
 
         if(path === 'blogger' && blog.AccountData.userId !== userId)
             throw new HttpException('Forbidden', 403)

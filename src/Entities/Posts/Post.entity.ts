@@ -21,8 +21,6 @@ export class Post {
         b => b.id, { onDelete: 'CASCADE' })
     @JoinColumn()
     blog: string
-    @Column({type: 'boolean', default: false})
-    deleted: boolean
     @OneToOne(() => ExtendedLikesInfo,
       { onDelete: 'CASCADE' })
     @JoinColumn()
@@ -30,6 +28,8 @@ export class Post {
     @OneToMany(() => Comment,
         c => c.post, { onDelete: 'CASCADE' })
     comment: Comment
+    @Column({type: 'boolean', default: false})
+    isBanned: boolean
 }
 
 // Join blog to post and add blog to post in creating

@@ -54,6 +54,7 @@ import { SuperadminBlogsService } from './Services/Blogs/superadmin.blogs.servic
 import { SuperadminBlogsController } from './Services/Blogs/superadmin.blogs.controller';
 import { BanInfo } from './Entities/User/BanInfo.entity';
 import { BlogBannedUsers } from './Entities/Blog/BlogBannedUsers.entity';
+import { BlogBanInfo } from './Entities/Blog/BlogBanInfo.entity';
 
 @Module({
     imports: [
@@ -72,14 +73,14 @@ import { BlogBannedUsers } from './Entities/Blog/BlogBannedUsers.entity';
                 LikesInfo, Comment, CommentatorInfo, PostController,
                 CommentReactions, Question, Player, CorrectAnswers,
                 PlayerProgress, GameQuestions, PairGame, UserAnswers,
-                Statistic, BanInfo, BlogBannedUsers]
+                Statistic, BanInfo, BlogBannedUsers, BlogBanInfo]
         }),
         TypeOrmModule.forFeature([User, EmailConfirmation,
             AccountData, Device, TokenBlackList, Blog, Post, NewestLikes,
             ExtendedLikesInfo, LikesInfo, Comment, CommentatorInfo, PostReactions,
             CommentReactions, Question, Player, CorrectAnswers, PlayerProgress,
         PairGame, GameQuestions, UserAnswers, Statistic, BanInfo,
-        BlogBannedUsers]),
+        BlogBannedUsers, BlogBanInfo]),
         UsersModule,
         ThrottlerModule.forRoot([{
             ttl: 60000,
@@ -88,7 +89,7 @@ import { BlogBannedUsers } from './Entities/Blog/BlogBannedUsers.entity';
     ],
     controllers: [AppController, LoginController, RegistrationController,
         EmailController, DevicesController, BlogController, PostController, CommentsController,
-    QuizController, GameController, BloggerController, SuperadminBlogsController],
+    QuizController, GameController, BloggerController, SuperadminBlogsController,],
     providers: [{
         provide: APP_GUARD,
         useClass: ThrottlerGuard

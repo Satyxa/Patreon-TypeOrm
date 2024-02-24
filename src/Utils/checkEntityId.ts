@@ -9,8 +9,10 @@ export const CheckEntityId = {
     checkBlogId: async (BlogRepository, blogId, message) => {
         const blog: Blog | null = await BlogRepository
             .createQueryBuilder("b")
-          .leftJoinAndSelect("b.AccountData", "ac")
+            .leftJoinAndSelect("b.AccountData", "ac")
+            .leftJoinAndSelect("b.banInfo", 'bi')
             .where("b.id = :blogId", {blogId})
+            .andWhere("bi.isBanned = :isBanned", {isBanned: false})
             .getOne()
         if (!blog) {
             if(message === 'for post') throw new BadRequestException(
@@ -18,7 +20,8 @@ export const CheckEntityId = {
             else throw new HttpException('Not Found', 404)
         }
         else {
-            return blog
+            const {banInfo, ...viewBlog} = blog
+            return viewBlog
         }
     },
     checkPostId: async (PostRepository: Repository<Post>, postId) => {
@@ -26,6 +29,7 @@ export const CheckEntityId = {
             .createQueryBuilder("p")
             .leftJoinAndSelect("p.blog", "b")
             .where("p.id = :postId", {postId})
+            .andWhere("p.isBanned = :isBanned", {isBanned: false})
             .getOne()
         if (!post) throw new HttpException('Not Found', 404)
 

@@ -14,6 +14,8 @@ import {ExtendedLikesInfo} from "../../Entities/Posts/ExtendedLikesInfo.entity";
 import {NewestLikes} from "../../Entities/Posts/NewestLikes.entity";
 import {PostReactions} from "../../Entities/Posts/PostReactions.entity";
 import { AccountData } from '../../Entities/User/AccountData.entity';
+import { BlogBanInfo } from '../../Entities/Blog/BlogBanInfo.entity';
+import { ObjectId } from 'typeorm/browser';
 
 @Injectable()
 export class SuperadminBlogsService {
@@ -26,7 +28,9 @@ export class SuperadminBlogsService {
               @InjectRepository(NewestLikes)
               protected NewestLikesRepository: Repository<NewestLikes>,
               @InjectRepository(PostReactions)
-              protected PostReactionsRepository: Repository<PostReactions>) {
+              protected PostReactionsRepository: Repository<PostReactions>,
+              @InjectRepository(BlogBanInfo)
+              protected BlogBanInfoRepository: Repository<BlogBanInfo>) {
   }
 
   deleteAllBlogs() {
@@ -36,7 +40,7 @@ export class SuperadminBlogsService {
   async getAllBlogs(payload, userId: string | null = null) {
     const { pagesCount, pageNumber,
       pageSize, totalCount, blogs
-    } = await blogsPS(this.BlogRepository, payload, userId)
+    } = await blogsPS(this.BlogRepository, payload, userId, true)
 
     const blogsWithOwnerInfo = blogs.map((b: Blog) => {
       return {
@@ -49,11 +53,43 @@ export class SuperadminBlogsService {
         blogOwnerInfo: {
           userId: b.AccountData.userId,
           userLogin: b.AccountData.login
+        },
+        banInfo: {
+          isBanned: b.banInfo.isBanned,
+          banDate: b.banInfo.banDate
         }
       }
     })
 
     return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: blogsWithOwnerInfo})
+  }
+
+  async banBlog(blogId, isBanned) {
+    if(isBanned){
+      await this.BlogBanInfoRepository
+        .update({blogId},
+        {isBanned, banDate: new Date().toISOString()})
+
+      await this.PostRepository
+
+        .update({ blog: {
+          //@ts-ignore
+            id: blogId
+           }
+          }, {isBanned})
+    } else {
+      await this.BlogBanInfoRepository
+        .update({blogId},
+          {isBanned, banDate: null})
+
+      await this.PostRepository
+        //@ts-ignore
+        .update({ blog: {
+            //@ts-ignore
+            id: blogId
+          }
+        }, {isBanned})
+    }
   }
 
 }

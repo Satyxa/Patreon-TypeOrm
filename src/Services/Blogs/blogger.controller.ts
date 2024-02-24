@@ -24,6 +24,13 @@ import {
 } from '../../Types/classesTypes';
 import { BloggerService } from './blogger.service';
 
+export type queryComments = {
+  pageSize: number,
+  pageNumber: number,
+  sortBy: string,
+  sortDirection: string
+}
+
 @Controller('blogger')
 export class BloggerController {
   constructor(private readonly BloggerService: BloggerService,
@@ -107,14 +114,29 @@ export class BloggerController {
   @Put('users/:id/ban')
   @HttpCode(204)
   async banUser(@Param('id') id: string,
-                @Body() payload: BlogUserBannedStatusPayload) {
-    await this.BloggerService.banUser(id, payload.isBanned, payload.banReason, payload.blogId)
+                @Body() payload: BlogUserBannedStatusPayload,
+                @Req() req: any) {
+    return await this.BloggerService.banUser(id, payload.isBanned,
+      payload.banReason, payload.blogId, req.userId)
 }
 
 @UseGuards(AuthGuard)
 @Get('users/blog/:id')
 @HttpCode(200)
-async getBannedUsersForBlog(@Param("id") id: string) {
-    await this.BloggerService.getBannedUsersForBlog(id)
+async getBannedUsersForBlog(@Param("id") id: string,
+                            @Query() payload: queryPayload,
+                            @Req() req: any) {
+    return await this.BloggerService.getBannedUsersForBlog(id, payload, req.userId)
 }
+
+  @UseGuards(AuthGuard)
+  @Get('blogs/comments')
+  async getAllCommentsForBlogger(@Req() req: any,
+                                 @Query() payload: queryComments) {
+    return await this.BloggerService
+      .getAllCommentsForBlogger(req.userId, payload)
+  }
+
+
+
 }

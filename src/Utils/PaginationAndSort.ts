@@ -136,7 +136,7 @@ export const usersPS = async (UserRepository, payload) => {
     return {users, pagesCount, pageNumber, pageSize, totalCount}
 }
 
-export const blogsPS = async (BlogRepository, payload, userId: string | null = null) => {
+export const blogsPS = async (BlogRepository, payload, userId: string | null = null, sa = false) => {
     const {pageNumber, pageSize, sortBy, searchNameTerm, sortDirection} = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
@@ -144,6 +144,7 @@ export const blogsPS = async (BlogRepository, payload, userId: string | null = n
     const query = await BlogRepository
       .createQueryBuilder("b")
       .leftJoinAndSelect("b.AccountData", "ac")
+      .leftJoinAndSelect("b.banInfo", "bi")
       .where("b.name ilike :searchNameTerm", { searchNameTerm:`%${searchNameTerm}%` })
 
     let totalCount = await query;
@@ -151,9 +152,20 @@ export const blogsPS = async (BlogRepository, payload, userId: string | null = n
 
     if(userId) {
         totalCount = await query
-          .andWhere("ac.userId = :userId", {userId})
+          .andWhere(new Brackets(qb => {
+              qb.where("ac.userId = :userId", {userId})
+                .andWhere("bi.isBanned = :isBanned", {isBanned: false})
+          }))
         blogs = await query
-          .andWhere("ac.userId = :userId", {userId})
+          .andWhere(new Brackets(qb => {
+              qb.where("ac.userId = :userId", {userId})
+                .andWhere("bi.isBanned = :isBanned", {isBanned: false})
+          }))
+    } else if(!userId && !sa) {
+        totalCount = await query
+          .andWhere("bi.isBanned = :isBanned", {isBanned: false})
+        blogs = await query
+          .andWhere("bi.isBanned = :isBanned", {isBanned: false})
     }
 
     totalCount = await totalCount.getCount()
@@ -166,10 +178,19 @@ export const blogsPS = async (BlogRepository, payload, userId: string | null = n
 
     const pagesCount = Math.ceil(totalCount / pageSize)
 
-    const viewBlogs = blogs.map((b: Blog) => {
-        const {AccountData, ...viewBlog} = b
-        return viewBlog
-    })
+    let viewBlogs;
+
+    if(!sa){
+        viewBlogs = blogs.map((b: Blog) => {
+            const {AccountData, banInfo, ...viewBlog} = b
+            return viewBlog
+        })
+    } else if(sa) {
+        viewBlogs = blogs.map((b: Blog) => {
+            const {AccountData, ...viewBlog} = b
+            return viewBlog
+        })
+    }
 
     return {viewBlogs, pagesCount, pageNumber, pageSize, totalCount, blogs}
 }
@@ -182,8 +203,9 @@ export const postsPS = async (PostRepository, payload, filter = null): Promise<a
     let query = await PostRepository
         .createQueryBuilder("p")
         .leftJoinAndSelect("p.blog", "b")
+        .where("p.isBanned = :isBanned", {isBanned: false})
 
-    if(filter) query.where(`b.id = :filter`, {filter})
+    if(filter) query.andWhere(`b.id = :filter`, {filter})
 
     const posts = await query
         .orderBy(`p.${sortBy}`, `${sortDirection.toUpperCase()}`)
@@ -197,6 +219,44 @@ export const postsPS = async (PostRepository, payload, filter = null): Promise<a
     return {posts, pagesCount, pageNumber, pageSize, totalCount}
 }
 
+export const blogBannedUsersPS = async (BlogBannedUsersRepository, payload, blogId): Promise<any> => {
+    let {pageNumber, pageSize, sortBy, sortDirection, searchLoginTerm} = getValuesPS(payload)
+
+    const offset = pageSize * pageNumber - pageSize
+
+    if(sortBy === 'createdAt') sortBy = 'banDate'
+
+    const query =
+      await BlogBannedUsersRepository
+        .createQueryBuilder("bbu")
+        .where('bbu.blogId = :blogId', {blogId})
+        .andWhere(`bbu.login ilike :searchLoginTerm`, { searchLoginTerm:`%${searchLoginTerm}%` })
+
+    const dbBannedUsers = await query
+      .orderBy(`bbu.${sortBy}`, `${sortDirection.toUpperCase()}`)
+      .limit(pageSize)
+      .offset(offset)
+      .getMany()
+
+    const bannedUsers = dbBannedUsers.map(bu => {
+        return {
+            id: bu.userId,
+            login: bu.login,
+            banInfo: {
+                isBanned: true,
+                banReason: bu.banReason,
+                banDate: bu.banDate
+            }
+        }
+    })
+
+
+    const totalCount = await query.getCount()
+    const pagesCount = Math.ceil(totalCount / pageSize)
+
+    return {bannedUsers, pagesCount, pageNumber, pageSize, totalCount}
+}
+
 export const commentsPS = async (CommentsRepository, payload, postId) => {
     const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
 
@@ -208,7 +268,6 @@ export const commentsPS = async (CommentsRepository, payload, postId) => {
         .leftJoinAndSelect("c.CommentatorInfo", "ci")
         .leftJoinAndSelect("c.LikesInfo", "li")
         .where("p.id = :postId", {postId})
-        .andWhere("c.deleted = :deleted", {deleted})
 
     const comments = await query
         .orderBy(`c.${sortBy}`, `${sortDirection.toUpperCase()}`)

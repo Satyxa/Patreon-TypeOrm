@@ -15,7 +15,6 @@ export class AuthGuard implements CanActivate {
                 protected DeviceRepository: Repository<Device>) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-
         const req = context.switchToHttp().getRequest()
         if(!req.headers.authorization) throw new UnauthorizedException()
 
@@ -29,6 +28,7 @@ export class AuthGuard implements CanActivate {
         if(!tokenPayload) throw new UnauthorizedException()
 
         const {userId, deviceId, iat} = tokenPayload
+
         const foundUser = await CheckEntityId.checkUserId(this.UserRepository, userId)
 
         const existDevice = await this.DeviceRepository.findOneBy({deviceId, userId})

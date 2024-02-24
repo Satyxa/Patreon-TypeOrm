@@ -17,10 +17,11 @@ import {queryPayload} from "../User/user.controller";
 import {PostService} from "../Posts/posts.service";
 import { AuthGuard, BasicAuthGuard } from '../../Middleware/Guards';
 import {
+  BanBlogPayload,
   createBlogPayloadClass,
   createdPostForBlogPayloadClass, createdPostPayloadClass,
-  updatePostForBlogPayload
-} from "../../Types/classesTypes";
+  updatePostForBlogPayload,
+} from '../../Types/classesTypes';
 import { SuperadminBlogsService } from './superadmin.blogs.service';
 
 @Controller('sa')
@@ -30,5 +31,13 @@ export class SuperadminBlogsController {
   @Get('blogs')
   async getAllBlogs(@Query() payload: queryPayload) {
     return await this.SuperadminBlogsService.getAllBlogs(payload)
+  }
+
+  @UseGuards(BasicAuthGuard)
+  @Put('blogs/:id/ban')
+  @HttpCode(204)
+  async banBlog(@Param('id') id: string,
+                @Body() payload: BanBlogPayload) {
+    await this.SuperadminBlogsService.banBlog(id, payload.isBanned)
   }
 }
