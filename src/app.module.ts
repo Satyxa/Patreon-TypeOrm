@@ -55,6 +55,8 @@ import { SuperadminBlogsController } from './Services/Blogs/superadmin.blogs.con
 import { BanInfo } from './Entities/User/BanInfo.entity';
 import { BlogBannedUsers } from './Entities/Blog/BlogBannedUsers.entity';
 import { BlogBanInfo } from './Entities/Blog/BlogBanInfo.entity';
+import { ImageInfo } from './Entities/Blog/Images/ImageInfo.entity';
+import { PostImageInfo } from './Entities/Posts/ImageInfo.entity';
 
 @Module({
     imports: [
@@ -73,14 +75,15 @@ import { BlogBanInfo } from './Entities/Blog/BlogBanInfo.entity';
                 LikesInfo, Comment, CommentatorInfo, PostController,
                 CommentReactions, Question, Player, CorrectAnswers,
                 PlayerProgress, GameQuestions, PairGame, UserAnswers,
-                Statistic, BanInfo, BlogBannedUsers, BlogBanInfo]
+                Statistic, BanInfo, BlogBannedUsers, BlogBanInfo, ImageInfo,
+                PostImageInfo]
         }),
         TypeOrmModule.forFeature([User, EmailConfirmation,
             AccountData, Device, TokenBlackList, Blog, Post, NewestLikes,
             ExtendedLikesInfo, LikesInfo, Comment, CommentatorInfo, PostReactions,
             CommentReactions, Question, Player, CorrectAnswers, PlayerProgress,
         PairGame, GameQuestions, UserAnswers, Statistic, BanInfo,
-        BlogBannedUsers, BlogBanInfo]),
+        BlogBannedUsers, BlogBanInfo, ImageInfo, PostImageInfo]),
         UsersModule,
         ThrottlerModule.forRoot([{
             ttl: 60000,

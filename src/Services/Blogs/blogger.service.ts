@@ -1,24 +1,28 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import {blogsT} from "../../Types/types";
-import { blogBannedUsersPS, blogsPS, getValuesPS, postsPS } from '../../Utils/PaginationAndSort';
-import * as uuid from 'uuid'
-import {EntityUtils} from "../../Utils/Entity.utils";
-import {getUserId} from "../../Utils/authentication";
-import {InjectDataSource, InjectRepository} from "@nestjs/typeorm";
-import { DataSource, In, Repository } from 'typeorm';
-import {CheckEntityId} from "../../Utils/checkEntityId";
-import {EntityWithReactions} from "../../Utils/EntityWithReactions";
-import {Blog, createBlog} from "../../Entities/Blog/Blog.entity";
-import {Post} from "../../Entities/Posts/Post.entity";
-import {ExtendedLikesInfo} from "../../Entities/Posts/ExtendedLikesInfo.entity";
-import {NewestLikes} from "../../Entities/Posts/NewestLikes.entity";
-import {PostReactions} from "../../Entities/Posts/PostReactions.entity";
+import { blogsT } from '../../Types/types';
+import { blogBannedUsersPS, getValuesPS } from '../../Utils/PaginationAndSort';
+import * as uuid from 'uuid';
+import { EntityUtils } from '../../Utils/Entity.utils';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { CheckEntityId } from '../../Utils/checkEntityId';
+import { EntityWithReactions } from '../../Utils/EntityWithReactions';
+import { Blog, createBlog } from '../../Entities/Blog/Blog.entity';
+import { Post } from '../../Entities/Posts/Post.entity';
+import { ExtendedLikesInfo } from '../../Entities/Posts/ExtendedLikesInfo.entity';
+import { NewestLikes } from '../../Entities/Posts/NewestLikes.entity';
+import { PostReactions } from '../../Entities/Posts/PostReactions.entity';
 import { User } from '../../Entities/User/User.entity';
 import { BlogBannedUsers, createBlogBannedUser } from '../../Entities/Blog/BlogBannedUsers.entity';
 import { BlogBanInfo, createBlogBanInfo } from '../../Entities/Blog/BlogBanInfo.entity';
 import { Comment } from '../../Entities/Comment/Comment.entity';
 import { queryComments } from './blogger.controller';
 import { CommentReactions } from '../../Entities/Comment/CommentReactions.entity';
+import { imagesUtils } from '../../Utils/images.utils';
+import { join, resolve } from 'path';
+import sharp from 'sharp';
+import { createImageInfo, createViewImageInfo, ImageInfo } from '../../Entities/Blog/Images/ImageInfo.entity';
+import { createPostViewImageInfo, PostImageInfo } from '../../Entities/Posts/ImageInfo.entity';
 
 @Injectable()
 export class BloggerService {
@@ -41,7 +45,11 @@ export class BloggerService {
               @InjectRepository(Comment)
               protected CommentRepository: Repository<Comment>,
               @InjectRepository(CommentReactions)
-              protected CommentReactionsRepository: Repository<CommentReactions>) {
+              protected CommentReactionsRepository: Repository<CommentReactions>,
+              @InjectRepository(ImageInfo)
+              protected BlogImageInfoRepository: Repository<ImageInfo>,
+              @InjectRepository(PostImageInfo)
+              protected PostImageInfoRepository: Repository<PostImageInfo>) {
   }
 
   deleteAllBlogs() {
@@ -60,12 +68,22 @@ export class BloggerService {
     await this.BlogBanInfoRepository.save(blogBanInfo)
 
     const blog: createBlog =
-      new createBlog(id, name, description, websiteUrl, createdAt, blogOwner.AccountData, blogBanInfo)
+      new createBlog(id, name, description, websiteUrl, createdAt,
+        blogOwner.AccountData, blogBanInfo)
 
     await this.BlogRepository.save(blog)
 
     const { AccountData, banInfo, ...viewBlog } = blog
-    return viewBlog
+
+    const blogWithImages = {
+      ...viewBlog,
+      images: {
+        wallpaper: null,
+        main: []
+      }
+    }
+
+    return blogWithImages
   }
 
   async deleteBlog(id, userId) {
@@ -192,6 +210,122 @@ export class BloggerService {
     const viewComments = comments.map(comment => EntityUtils.createViewComment(comment, bloggerId, reactions, postsInfo))
 
     return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: viewComments})
+  }
+
+  async setMainImageForBlog(main, blogId, userId) {
+
+    const blog = await CheckEntityId.checkBlogId(this.BlogRepository, blogId, 'for blog')
+
+    if(blog.AccountData.userId !== userId)
+      throw new HttpException('Forbidden', 403)
+
+    imagesUtils.imageValidation(main, 156, 156)
+
+    const uniqueFileName = uuid.v4()
+
+    const viewPath =
+      `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/blogs/
+      ${blogId}/${uniqueFileName}`
+
+    const mainInfo =
+      new createImageInfo(blogId, viewPath,
+        156, 156, main.size, `main`)
+
+    await imagesUtils.saveFileToAWS(uniqueFileName, main.buffer,
+      'blogs', blogId)
+
+    await this.BlogImageInfoRepository.save(mainInfo)
+
+    const wallpaperImage = await imagesUtils
+      .getWallpaperAndMainsImagesForBlog(this.BlogImageInfoRepository, blogId, 'wallpaper')
+
+    const mainImages = await imagesUtils
+      .getWallpaperAndMainsImagesForBlog(this.BlogImageInfoRepository, blogId, 'main')
+
+    return {
+      main: mainImages,
+      wallpaper: wallpaperImage
+    }
+  }
+
+  async setWallpaperForBlog(wallpaper, blogId, userId) {
+
+    const blog = await CheckEntityId.checkBlogId(this.BlogRepository, blogId, 'for blog')
+
+    if(blog.AccountData.userId !== userId)
+      throw new HttpException('Forbidden', 403)
+
+    imagesUtils.imageValidation(wallpaper, 1028, 312)
+
+    const uniqueFileName = uuid.v4()
+
+    const viewPath =
+      `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/blogs/
+      ${blogId}/${uniqueFileName}`
+
+    const wallpaperInfo =
+      new createImageInfo(blogId, viewPath,
+        312, 1028, wallpaper.size, 'wallpaper')
+
+    await imagesUtils.saveFileToAWS(uniqueFileName, wallpaper.buffer,
+      'blogs', blogId)
+
+    await this.BlogImageInfoRepository.save(wallpaperInfo)
+
+    const mainImages = await imagesUtils
+      .getWallpaperAndMainsImagesForBlog(this.BlogImageInfoRepository, blogId, 'main')
+
+    return {
+      main: mainImages,
+      wallpaper: new createViewImageInfo(viewPath,
+        312, 1028, wallpaperInfo.fileSize),
+    }
+
+  }
+
+  async setMainForPost(blogId, postId, main, userId){
+
+    const blog = await CheckEntityId.checkBlogId(this.BlogRepository, blogId, 'for blog')
+
+    await CheckEntityId.checkPostId(this.PostRepository, postId)
+
+    if(blog.AccountData.userId !== userId)
+      throw new HttpException('Forbidden', 403)
+
+    imagesUtils.imageValidation(main, 940, 432)
+
+    const viewPath = (imgType) =>
+      `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/posts/
+      ${postId}/${imgType}`
+
+    const original =
+      await imagesUtils.getResizedImgAndImgInfo(main,
+        'original', 940, 432,
+        viewPath('original'), 'original', postId)
+
+    const middle =
+      await imagesUtils.getResizedImgAndImgInfo(main,
+        'middle', 300, 180,
+        viewPath('middle'), 'middle', postId)
+
+    const small =
+      await imagesUtils.getResizedImgAndImgInfo(main,
+        'small', 149, 96,
+        viewPath('small'), 'small', postId)
+
+    await this.PostImageInfoRepository.save(original)
+    await this.PostImageInfoRepository.save(middle)
+    await this.PostImageInfoRepository.save(small)
+
+    return [
+      new createPostViewImageInfo(viewPath('original'),
+      432, 940, original.fileSize),
+      new createPostViewImageInfo(viewPath('middle'),
+        180, 300, middle.fileSize),
+      new createPostViewImageInfo(viewPath('small'),
+        96, 149, small.fileSize),
+    ]
+
   }
 
 }

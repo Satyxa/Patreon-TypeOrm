@@ -5,12 +5,12 @@ import {
   Delete,
   Get,
   Headers,
-  HttpCode, HttpException,
-  Param,
+  HttpCode, HttpException, HttpStatus,
+  Param, ParseFilePipeBuilder,
   Post,
   Put,
-  Query, Req,
-  UseGuards,
+  Query, Req, UploadedFile,
+  UseGuards, UseInterceptors,
 } from '@nestjs/common';
 import {BlogService} from "./blogs.service";
 import {queryPayload} from "../User/user.controller";
@@ -23,6 +23,12 @@ import {
   updatePostForBlogPayload, UserBannedStatusPayload,
 } from '../../Types/classesTypes';
 import { BloggerService } from './blogger.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { basename, dirname, join, resolve } from 'path';
+import { imagesUtils } from '../../Utils/images.utils';
+import sharp from 'sharp';
+import { writeFile } from 'fs';
+import * as path from 'path';
 
 export type queryComments = {
   pageSize: number,
@@ -137,6 +143,28 @@ async getBannedUsersForBlog(@Param("id") id: string,
       .getAllCommentsForBlogger(req.userId, payload)
   }
 
-
-
+  @UseGuards(AuthGuard)
+  @Post('blogs/:blogId/images/main')
+  @UseInterceptors(FileInterceptor('file'))
+  async setMainImageForBlog(@UploadedFile() main: Express.Multer.File,
+                            @Param('blogId') blogId: string,
+                            @Req() req: any) {
+    return await this.BloggerService.setMainImageForBlog(main, blogId, req.userId)
+  }
+  @UseGuards(AuthGuard)
+  @Post('blogs/:blogId/images/wallpaper')
+  @UseInterceptors(FileInterceptor('file'))
+  async setWallpaperImageForBlog(@UploadedFile() main: Express.Multer.File,
+                                 @Param('blogId') blogId: string,
+                                 @Req() req: any) {
+    return await this.BloggerService.setWallpaperForBlog(main, blogId, req.userId)
+  }
+  @UseGuards(AuthGuard)
+  @Post('blogs/:blogId/posts/:postId/images/main')
+  @UseInterceptors(FileInterceptor('file'))
+  async setMainImageForPost(@UploadedFile() main: Express.Multer.File,
+                            @Param() payload,
+                            @Req() req: any) {
+    return await this.BloggerService.setMainForPost(payload.blogId, payload.postId, main, req.userId)
+  }
 }

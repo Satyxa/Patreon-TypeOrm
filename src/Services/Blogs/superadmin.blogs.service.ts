@@ -16,6 +16,7 @@ import {PostReactions} from "../../Entities/Posts/PostReactions.entity";
 import { AccountData } from '../../Entities/User/AccountData.entity';
 import { BlogBanInfo } from '../../Entities/Blog/BlogBanInfo.entity';
 import { ObjectId } from 'typeorm/browser';
+import { ImageInfo } from '../../Entities/Blog/Images/ImageInfo.entity';
 
 @Injectable()
 export class SuperadminBlogsService {
@@ -30,7 +31,9 @@ export class SuperadminBlogsService {
               @InjectRepository(PostReactions)
               protected PostReactionsRepository: Repository<PostReactions>,
               @InjectRepository(BlogBanInfo)
-              protected BlogBanInfoRepository: Repository<BlogBanInfo>) {
+              protected BlogBanInfoRepository: Repository<BlogBanInfo>,
+              @InjectRepository(ImageInfo)
+              protected ImageInfoRepository: Repository<ImageInfo>) {
   }
 
   deleteAllBlogs() {
@@ -40,7 +43,7 @@ export class SuperadminBlogsService {
   async getAllBlogs(payload, userId: string | null = null) {
     const { pagesCount, pageNumber,
       pageSize, totalCount, blogs
-    } = await blogsPS(this.BlogRepository, payload, userId, true)
+    } = await blogsPS(this.BlogRepository, payload, userId, true, this.ImageInfoRepository)
 
     const blogsWithOwnerInfo = blogs.map((b: Blog) => {
       return {

@@ -2,6 +2,7 @@ import {Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGener
 import {Blog, createBlog} from "../Blog/Blog.entity";
 import {createELI, ExtendedLikesInfo} from "./ExtendedLikesInfo.entity";
 import {Comment, createComment} from "../Comment/Comment.entity";
+import { PostImageInfo } from './ImageInfo.entity';
 
 @Entity()
 export class Post {
@@ -30,12 +31,16 @@ export class Post {
     comment: Comment
     @Column({type: 'boolean', default: false})
     isBanned: boolean
+    @OneToMany(() => PostImageInfo,
+        p => p.postId,
+      {nullable: true, onDelete: 'CASCADE'})
+    @JoinColumn()
+    images: PostImageInfo
 }
 
 // Join blog to post and add blog to post in creating
 
 export class createPost {
-    public deleted = false
     constructor(public id: string,
                 public title: string,
                 public shortDescription: string,

@@ -5,6 +5,7 @@ import {HttpExceptionFilter} from "./Middleware/exception.filter";
 import {ErrorsType} from "./Types/types";
 import cookieParser from 'cookie-parser';
 import {useContainer} from "class-validator";
+import { CreateBucketCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 async function Server() {
   const app = await NestFactory.create(AppModule);
@@ -23,6 +24,7 @@ async function Server() {
       throw new BadRequestException(errorsForRes)
   }}))
   app.useGlobalFilters(new HttpExceptionFilter())
+
   await app.listen(1668);
 }
 Server();

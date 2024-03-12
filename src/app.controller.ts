@@ -9,6 +9,8 @@ import {InjectDataSource} from "@nestjs/typeorm";
 import {DataSource} from "typeorm";
 import {QuestionService} from "./Services/Game/Question.service";
 import { GameService } from './Services/Game/Game.service';
+import { dirname } from 'path';
+import * as path from 'path';
 
 @Controller()
 export class AppController {
@@ -26,6 +28,7 @@ export class AppController {
 
   @Get()
   getHello(): string {
+    console.log(__dirname);
     return this.appService.getHello();
   }
   @Delete('testing/all-data')

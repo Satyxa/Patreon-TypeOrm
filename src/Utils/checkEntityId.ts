@@ -11,6 +11,7 @@ export const CheckEntityId = {
             .createQueryBuilder("b")
             .leftJoinAndSelect("b.AccountData", "ac")
             .leftJoinAndSelect("b.banInfo", 'bi')
+            .leftJoinAndSelect('b.images', 'i')
             .where("b.id = :blogId", {blogId})
             .andWhere("bi.isBanned = :isBanned", {isBanned: false})
             .getOne()
@@ -21,6 +22,7 @@ export const CheckEntityId = {
         }
         else {
             const {banInfo, ...viewBlog} = blog
+
             return viewBlog
         }
     },
@@ -28,6 +30,7 @@ export const CheckEntityId = {
         const post = await PostRepository
             .createQueryBuilder("p")
             .leftJoinAndSelect("p.blog", "b")
+            .leftJoinAndSelect('p.images', 'i')
             .where("p.id = :postId", {postId})
             .andWhere("p.isBanned = :isBanned", {isBanned: false})
             .getOne()

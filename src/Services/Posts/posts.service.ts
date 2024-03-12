@@ -51,7 +51,9 @@ export class PostService {
     }
 
     async getAllPosts(payload, headers): Promise<any> {
+        console.log(1);
         const {posts, pagesCount, pageNumber, pageSize, totalCount} = await postsPS(this.PostRepository, payload)
+        console.log(2);
         const {reactions, newestLikes, extendedLikesInfo} =
             await EntityWithReactions
                 .getPostsInfo(

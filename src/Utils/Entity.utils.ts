@@ -19,6 +19,8 @@ import { UserAnswers } from '../Entities/Quiz/UserAnswers.entity';
 import { createViewPlayerProgress, PlayerProgress } from '../Entities/Quiz/PlayerProgress.entity';
 import { createBanInfo } from '../Entities/User/BanInfo.entity';
 import { In } from 'typeorm';
+import { createViewImageInfo, ImageInfo } from '../Entities/Blog/Images/ImageInfo.entity';
+import { createPostViewImageInfo, PostImageInfo } from '../Entities/Posts/ImageInfo.entity';
 
 export const EntityUtils = {
     CreateUser: async (login, email, password) => {
@@ -57,6 +59,29 @@ export const EntityUtils = {
         const REACTForPost = reactions.filter(el => el.entityId === post.id)
         const ELIForPost = extendedLikesInfo.filter(el => el.postId === post.id)
 
+        let main: createPostViewImageInfo[] = [];
+
+        if(post.images){
+            post.images.forEach((i: PostImageInfo) => {
+                if(i.type === 'small') {
+                    const small =
+                      new createPostViewImageInfo(i.url, i.height, i.width, i.fileSize);
+                    main.push(small)
+                }
+                else if(i.type === 'middle') {
+                    const middle =
+                      new createPostViewImageInfo(i.url, i.height, i.width, i.fileSize);
+                    main.push(middle)
+                }
+                else if(i.type === 'original'){
+                    const original =
+                      new createPostViewImageInfo(i.url, i.height, i.width, i.fileSize);
+                    main.push(original)
+                }
+            })
+            post.images.main = main
+        }
+
         return {
             id: post.id,
             title: post.title,
@@ -82,7 +107,8 @@ export const EntityUtils = {
                         };
                     return
                 }).splice(0, 3)
-            }
+            },
+            images: { main }
         }
     },
     CreatePost: async (PostRepository, ExtendedLikesInfoRepository,

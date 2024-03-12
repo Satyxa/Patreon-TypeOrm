@@ -4,7 +4,6 @@ import { DataSource, Repository } from 'typeorm';
 import {createQuestion, createViewQuestion, Question} from "../../Entities/Quiz/Question.entity";
 import * as uuid from 'uuid'
 import { CorrectAnswers } from '../../Entities/Quiz/CorrectAnswers.entity';
-import { copyPathResolve } from '@nestjs/cli/lib/compiler/helpers/copy-path-resolve';
 import { EntityUtils } from '../../Utils/Entity.utils';
 import { questionsPS } from '../../Utils/PaginationAndSort';
 @Injectable()

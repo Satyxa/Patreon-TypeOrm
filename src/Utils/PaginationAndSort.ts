@@ -1,6 +1,7 @@
-import {Brackets} from "typeorm";
+import { Brackets, Repository } from 'typeorm';
 import {deleted} from "../Constants";
 import { Blog } from '../Entities/Blog/Blog.entity';
+import { createImageInfo, createViewImageInfo, ImageInfo } from '../Entities/Blog/Images/ImageInfo.entity';
 
 export const getValuesPS = (payload) => {
     let {pageNumber, pageSize, sortBy, searchLoginTerm,
@@ -136,7 +137,10 @@ export const usersPS = async (UserRepository, payload) => {
     return {users, pagesCount, pageNumber, pageSize, totalCount}
 }
 
-export const blogsPS = async (BlogRepository, payload, userId: string | null = null, sa = false) => {
+export const blogsPS = async (BlogRepository, payload,
+                              userId: string | null = null,
+                              sa = false,
+                              imgInfoRepository) => {
     const {pageNumber, pageSize, sortBy, searchNameTerm, sortDirection} = getValuesPS(payload)
 
     const offset = pageSize * pageNumber - pageSize
@@ -145,6 +149,7 @@ export const blogsPS = async (BlogRepository, payload, userId: string | null = n
       .createQueryBuilder("b")
       .leftJoinAndSelect("b.AccountData", "ac")
       .leftJoinAndSelect("b.banInfo", "bi")
+      .leftJoinAndSelect("b.images", 'i')
       .where("b.name ilike :searchNameTerm", { searchNameTerm:`%${searchNameTerm}%` })
 
     let totalCount = await query;
@@ -181,7 +186,19 @@ export const blogsPS = async (BlogRepository, payload, userId: string | null = n
     let viewBlogs;
 
     if(!sa){
-        viewBlogs = blogs.map((b: Blog) => {
+        viewBlogs = blogs.map((b) => {
+
+            let wallpaper: createViewImageInfo | null = null;
+            let main: createViewImageInfo[] = [];
+            b.images.forEach((i: ImageInfo) => {
+                if(i.type === 'wallpaper') wallpaper =
+                      new createViewImageInfo(i.url, i.height, i.width, i.fileSize)
+                else if(i.type === 'main') main.push(
+                  new createViewImageInfo(i.url, i.height, i.width, i.fileSize))
+            })
+
+            b.images = { wallpaper, main }
+
             const {AccountData, banInfo, ...viewBlog} = b
             return viewBlog
         })
@@ -197,12 +214,13 @@ export const blogsPS = async (BlogRepository, payload, userId: string | null = n
 
 export const postsPS = async (PostRepository, payload, filter = null): Promise<any> => {
     const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
-
+    console.log(3);
     const offset = pageSize * pageNumber - pageSize
 
     let query = await PostRepository
         .createQueryBuilder("p")
         .leftJoinAndSelect("p.blog", "b")
+        .leftJoinAndSelect('p.images', 'i')
         .where("p.isBanned = :isBanned", {isBanned: false})
 
     if(filter) query.andWhere(`b.id = :filter`, {filter})
@@ -212,6 +230,8 @@ export const postsPS = async (PostRepository, payload, filter = null): Promise<a
         .limit(pageSize)
         .offset(offset)
         .getMany()
+
+    console.log(posts);
 
     const totalCount = await query.getCount()
     const pagesCount = Math.ceil(totalCount / pageSize)

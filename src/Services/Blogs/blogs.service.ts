@@ -14,6 +14,8 @@ import {ExtendedLikesInfo} from "../../Entities/Posts/ExtendedLikesInfo.entity";
 import {NewestLikes} from "../../Entities/Posts/NewestLikes.entity";
 import {PostReactions} from "../../Entities/Posts/PostReactions.entity";
 import { AccountData } from '../../Entities/User/AccountData.entity';
+import { createViewImageInfo, ImageInfo } from '../../Entities/Blog/Images/ImageInfo.entity';
+import { join } from 'path';
 
 @Injectable()
 export class BlogService {
@@ -26,7 +28,9 @@ export class BlogService {
                 @InjectRepository(NewestLikes)
                 protected NewestLikesRepository: Repository<NewestLikes>,
                 @InjectRepository(PostReactions)
-                protected PostReactionsRepository: Repository<PostReactions>) {
+                protected PostReactionsRepository: Repository<PostReactions>,
+                @InjectRepository(ImageInfo)
+                protected ImageInfoRepository: Repository<ImageInfo>) {
     }
 
     deleteAllBlogs() {
@@ -37,13 +41,29 @@ export class BlogService {
         const {
             viewBlogs, pagesCount, pageNumber,
             pageSize, totalCount
-        } = await blogsPS(this.BlogRepository, payload, userId)
+        } = await blogsPS(this.BlogRepository, payload, userId, false, this.ImageInfoRepository)
         return ({pagesCount, page: +pageNumber, pageSize, totalCount, items: viewBlogs})
     }
 
     async getOneBlog(id) {
         const {AccountData, ...viewBlog} = await CheckEntityId
           .checkBlogId(this.BlogRepository, id, 'for blog')
+
+        let wallpaper: createViewImageInfo | null = null;
+        let main: createViewImageInfo[] = [];
+        //@ts-ignore
+        viewBlog.images.forEach((i: ImageInfo) => {
+            if(i.type === 'wallpaper') wallpaper =
+              new createViewImageInfo(i.url, i.height, i.width, i.fileSize)
+            else if(i.type === 'main') {
+                main.push(
+                  new createViewImageInfo(i.url.split('\\').join('/'), i.height, i.width, i.fileSize));
+            }
+
+        })
+//@ts-ignore
+        viewBlog.images = { wallpaper, main }
+
         return viewBlog
     }
 
@@ -54,7 +74,6 @@ export class BlogService {
 
         if(path === 'blogger' && blog.AccountData.userId !== userId)
             throw new HttpException('Forbidden', 403)
-
 
         const {posts, pagesCount, pageNumber, pageSize, totalCount} =
           await postsPS(this.PostRepository, payload, id)

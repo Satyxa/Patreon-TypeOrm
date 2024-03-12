@@ -1,12 +1,11 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import {Post} from "../Posts/Post.entity";
-import { User } from '../User/User.entity';
 import { AccountData } from '../User/AccountData.entity';
 import { BlogBanInfo, createBlogBanInfo } from './BlogBanInfo.entity';
+import { ImageInfo } from './Images/ImageInfo.entity';
 
 
 @Entity()
-
 export class Blog {
     @PrimaryGeneratedColumn("uuid")
     id: string
@@ -30,6 +29,11 @@ export class Blog {
     @OneToOne(() => BlogBanInfo, { onDelete: 'CASCADE' })
     @JoinColumn()
     banInfo: BlogBanInfo
+    @OneToMany(() => ImageInfo,
+        ii => ii.blogId,
+      {nullable: true, onDelete: 'CASCADE'})
+    @JoinColumn()
+    images: ImageInfo[]
 }
 
 export class createBlog {
