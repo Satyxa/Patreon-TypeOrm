@@ -224,8 +224,7 @@ export class BloggerService {
     const uniqueFileName = uuid.v4()
 
     const viewPath =
-      `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/blogs/
-      ${blogId}/${uniqueFileName}`
+      `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/blogs/${blogId}/${uniqueFileName}`
 
     const mainInfo =
       new createImageInfo(blogId, viewPath,
@@ -260,8 +259,7 @@ export class BloggerService {
     const uniqueFileName = uuid.v4()
 
     const viewPath =
-      `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/blogs/
-      ${blogId}/${uniqueFileName}`
+      `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/blogs/${blogId}/${uniqueFileName}`
 
     const wallpaperInfo =
       new createImageInfo(blogId, viewPath,
@@ -295,8 +293,7 @@ export class BloggerService {
     imagesUtils.imageValidation(main, 940, 432)
 
     const viewPath = (imgType) =>
-      `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/posts/
-      ${postId}/${imgType}`
+      `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/posts/${postId}/${imgType}`
 
     const original =
       await imagesUtils.getResizedImgAndImgInfo(main,
