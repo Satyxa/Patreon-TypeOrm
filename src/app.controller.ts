@@ -34,13 +34,13 @@ export class AppController {
   @Delete('testing/all-data')
   @HttpCode(204)
   async deleteAll() {
-    // await this.UserService.deleteAll()
-    // await this.DevicesService.deleteAll()
-    // await this.PostService.deleteAllPosts()
-    // await this.BlogService.deleteAllBlogs()
-    // await this.CommentsService.deleteAll()
-    // await this.QuizService.deleteAll()
-    // await this.GameService.deleteAll()
+    await this.UserService.deleteAll()
+    await this.DevicesService.deleteAll()
+    await this.PostService.deleteAllPosts()
+    await this.BlogService.deleteAllBlogs()
+    await this.CommentsService.deleteAll()
+    await this.QuizService.deleteAll()
+    await this.GameService.deleteAll()
   }
 
 }
