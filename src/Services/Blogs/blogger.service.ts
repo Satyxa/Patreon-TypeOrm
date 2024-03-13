@@ -316,14 +316,16 @@ export class BloggerService {
     await this.PostImageInfoRepository.save(middle)
     await this.PostImageInfoRepository.save(small)
 
-    return [
-      new createPostViewImageInfo(viewPath('original'),
-      432, 940, original.fileSize),
+    return {
+      main: [
+        new createPostViewImageInfo(viewPath('original'),
+          432, 940, original.fileSize),
       new createPostViewImageInfo(viewPath('middle'),
         180, 300, middle.fileSize),
       new createPostViewImageInfo(viewPath('small'),
-        96, 149, small.fileSize),
-    ]
+        96, 149, small.fileSize)
+  ]
+  }
 
   }
 
