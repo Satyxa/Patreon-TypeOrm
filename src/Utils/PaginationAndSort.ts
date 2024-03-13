@@ -177,7 +177,7 @@ export const blogsPS = async (BlogRepository, payload,
 
     blogs = await blogs
       .orderBy(`b.${sortBy}`, `${sortDirection.toUpperCase()}`)
-      .limit(pageSize)
+      .take(pageSize)
       .offset(offset)
       .getMany()
 
@@ -214,7 +214,7 @@ export const blogsPS = async (BlogRepository, payload,
 
 export const postsPS = async (PostRepository, payload, filter = null): Promise<any> => {
     const {pageNumber, pageSize, sortBy, sortDirection} = getValuesPS(payload)
-    console.log(3);
+
     const offset = pageSize * pageNumber - pageSize
 
     let query = await PostRepository
@@ -223,15 +223,13 @@ export const postsPS = async (PostRepository, payload, filter = null): Promise<a
         .leftJoinAndSelect('p.images', 'i')
         .where("p.isBanned = :isBanned", {isBanned: false})
 
-    if(filter) query.andWhere(`b.id = :filter`, {filter})
+    if(filter) query = await query.andWhere(`b.id = :filter`, {filter})
 
     const posts = await query
         .orderBy(`p.${sortBy}`, `${sortDirection.toUpperCase()}`)
-        .limit(pageSize)
+        .take(pageSize)
         .offset(offset)
         .getMany()
-
-    console.log(posts);
 
     const totalCount = await query.getCount()
     const pagesCount = Math.ceil(totalCount / pageSize)

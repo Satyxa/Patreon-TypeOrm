@@ -22,7 +22,7 @@ import { imagesUtils } from '../../Utils/images.utils';
 import { join, resolve } from 'path';
 import sharp from 'sharp';
 import { createImageInfo, createViewImageInfo, ImageInfo } from '../../Entities/Blog/Images/ImageInfo.entity';
-import { createPostViewImageInfo, PostImageInfo } from '../../Entities/Posts/ImageInfo.entity';
+import { createPostImageInfo, createPostViewImageInfo, PostImageInfo } from '../../Entities/Posts/ImageInfo.entity';
 
 @Injectable()
 export class BloggerService {
@@ -295,10 +295,12 @@ export class BloggerService {
     const viewPath = (imgType) =>
       `https://patreon-typeorm.s3.eu-central-1.amazonaws.com/static/posts/${postId}/${imgType}`
 
+    await imagesUtils
+      .saveFileToAWS('original', main.buffer, 'posts', postId)
+
     const original =
-      await imagesUtils.getResizedImgAndImgInfo(main,
-        'original', 940, 432,
-        viewPath('original'), 'original', postId)
+      new createPostImageInfo(postId, viewPath('original'),
+        432, 940, main.size, 'original')
 
     const middle =
       await imagesUtils.getResizedImgAndImgInfo(main,

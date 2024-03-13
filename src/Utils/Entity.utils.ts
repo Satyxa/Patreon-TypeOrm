@@ -62,7 +62,7 @@ export const EntityUtils = {
         let main: createPostViewImageInfo[] = [];
 
         if(post.images){
-            post.images.forEach((i: PostImageInfo) => {
+            post.images.map((i: PostImageInfo) => {
                 if(i.type === 'small') {
                     const small =
                       new createPostViewImageInfo(i.url, i.height, i.width, i.fileSize);

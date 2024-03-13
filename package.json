@@ -40,6 +40,7 @@
     "date-fns": "^3.3.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.6.3",
+    "ngrok": "^5.0.0-beta.2",
     "nodemailer": "^6.9.7",
     "pg": "^8.11.3",
     "reflect-metadata": "^0.1.13",
