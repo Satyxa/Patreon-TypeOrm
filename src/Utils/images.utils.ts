@@ -63,19 +63,22 @@ export const imagesUtils = {
     return imgFormat
 },
 
-  async getResizedImgAndImgInfo(img, fileName, width,
-                                height, path, photoType,
-                                entityId) {
+  getResizedImgAndImgInfo: async function(img, fileName, width,
+                                          height, path, photoType,
+                                          entityId) {
     const imgResized = await sharp(img.buffer)
-      .resize({ width, height }).toBuffer()
+      .resize({ width, height }).toBuffer();
 
-    const imgResizedFile = await sharp(img.buffer)
-      .resize({ width, height }).toFile('imgResizedFile.png')
+    // const imgResizedFile = await sharp(img.buffer)
+    //   .resize({ width, height });
 
-    await this.saveFileToAWS(fileName, imgResized, 'posts', entityId)
+    const { size = 0 } = await sharp(imgResized).metadata();
 
-      return new createPostImageInfo(entityId, path,
-        height, width, imgResizedFile.size, photoType)
+
+    await this.saveFileToAWS(fileName, imgResized, 'posts', entityId);
+
+    return new createPostImageInfo(entityId, path,
+      height, width, size, photoType);
 
   },
 
